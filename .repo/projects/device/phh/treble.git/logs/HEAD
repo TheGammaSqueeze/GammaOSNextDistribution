@@ -1,0 +1,19 @@
+49614ab8af106f5fde7eb2041061a66512643683 39f6a8123eebdc07943693ca6d2835b5feb25827 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635847 +0000	am: treble: Lineage-ify
+39f6a8123eebdc07943693ca6d2835b5feb25827 1f5153f451dac4d8d56a47ece340401a8131c5bc TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635847 +0000	am: treble: Set BOARD_EXT4_SHARE_DUP_BLOCKS explicitly
+1f5153f451dac4d8d56a47ece340401a8131c5bc d208499d452729808fdfb9125e6a6e8c923dcc2a TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635847 +0000	am: treble: Set TARGET_NO_KERNEL_OVERRIDE
+d208499d452729808fdfb9125e6a6e8c923dcc2a 720025b3a22447eeb418ec8d3d31b3c8fa140d69 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635847 +0000	am: treble: Enable call recording
+720025b3a22447eeb418ec8d3d31b3c8fa140d69 2781c0263a0d686b865d28a4fe977bd6ac58c67c TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635847 +0000	am: treble: Switch to MindTheGapps
+2781c0263a0d686b865d28a4fe977bd6ac58c67c 3b7694f8dd130f8faabe458b0826a909164f4a12 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635847 +0000	am: treble: Stop securing ADB
+3b7694f8dd130f8faabe458b0826a909164f4a12 8c87d32bd6fecd7b23d0be12c9cff63c4f0cc35f TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635847 +0000	am: treble: Securize on-demand
+8c87d32bd6fecd7b23d0be12c9cff63c4f0cc35f cb0f280b18788a2c1a378e7b0991bf171c5b0be3 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635847 +0000	am: treble: Also use /data/adb for securize status
+cb0f280b18788a2c1a378e7b0991bf171c5b0be3 a0d936281a3965b97ab43c73ae73d0fd343f9a98 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635847 +0000	am: treble: Import prebuilt PHH Superuser
+a0d936281a3965b97ab43c73ae73d0fd343f9a98 49614ab8af106f5fde7eb2041061a66512643683 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647346 +0000	checkout: moving from a0d936281a3965b97ab43c73ae73d0fd343f9a98 to 49614ab8af106f5fde7eb2041061a66512643683
+49614ab8af106f5fde7eb2041061a66512643683 0c751496630f9fe52f17828fc060c5b56c4c17ac TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: treble: Lineage-ify
+0c751496630f9fe52f17828fc060c5b56c4c17ac eea261dfdc1e2e4a5bd53f30557a3948985eca7e TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: treble: Set BOARD_EXT4_SHARE_DUP_BLOCKS explicitly
+eea261dfdc1e2e4a5bd53f30557a3948985eca7e a42b5d44706de76c53b8c2f1c8ac01437ae100ae TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: treble: Set TARGET_NO_KERNEL_OVERRIDE
+a42b5d44706de76c53b8c2f1c8ac01437ae100ae 4c1b38bd42eb3fd119f00849ea49d662dec048e4 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: treble: Enable call recording
+4c1b38bd42eb3fd119f00849ea49d662dec048e4 ac896bd880b769866e327285a540fee0732f4459 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: treble: Switch to MindTheGapps
+ac896bd880b769866e327285a540fee0732f4459 b0feb8b689472932452fcf7f36ca032452406c8e TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: treble: Stop securing ADB
+b0feb8b689472932452fcf7f36ca032452406c8e 9464e0845e5633ad77b62906a342a1a437723198 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: treble: Securize on-demand
+9464e0845e5633ad77b62906a342a1a437723198 528a4bad3f8fb3cb5a23cd5380afdb390d6112f3 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: treble: Also use /data/adb for securize status
+528a4bad3f8fb3cb5a23cd5380afdb390d6112f3 3cd66b13113e1f0647981cc751328ad76bbcc3f9 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: treble: Import prebuilt PHH Superuser

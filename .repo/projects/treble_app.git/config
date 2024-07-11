@@ -1,0 +1,8 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+[remote "github"]
+	url = https://github.com/TrebleDroid/treble_app
+	review = review.lineageos.org
+	projectname = TrebleDroid/treble_app
+	fetch = +refs/heads/*:refs/remotes/github/*

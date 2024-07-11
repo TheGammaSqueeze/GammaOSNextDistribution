@@ -1,0 +1,9 @@
+dede32071bc7b5b74af31e7deaa6c178af019bde 22679e74e72254257da8f9d0bf5b68e86f4766f7 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635819 +0000	am: build: remove emulator crap from GSI
+22679e74e72254257da8f9d0bf5b68e86f4766f7 d1dc740ce3cddec40d1e93ab034864f798192502 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635819 +0000	am: build: Bypass vendor calls
+d1dc740ce3cddec40d1e93ab034864f798192502 61eb6d61410df8c2c9237c481ac555fa8c71a4b3 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: build: Remove llkd
+61eb6d61410df8c2c9237c481ac555fa8c71a4b3 ba878724ffebd926ba5a9b52e54a900963351b84 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635846 +0000	am: Remove init.vndk-nodef.rc
+ba878724ffebd926ba5a9b52e54a900963351b84 dede32071bc7b5b74af31e7deaa6c178af019bde TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647351 +0000	checkout: moving from ba878724ffebd926ba5a9b52e54a900963351b84 to dede32071bc7b5b74af31e7deaa6c178af019bde
+dede32071bc7b5b74af31e7deaa6c178af019bde 8234065ebb29103e0d074d736b585f9945a1d5db TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647399 +0000	am: build: remove emulator crap from GSI
+8234065ebb29103e0d074d736b585f9945a1d5db 455fc203c514287b5db755c2750f1cca09c65cde TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647399 +0000	am: build: Bypass vendor calls
+455fc203c514287b5db755c2750f1cca09c65cde f289d4c4e55a26d0a1e6b4aead060d243feced23 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: build: Remove llkd
+f289d4c4e55a26d0a1e6b4aead060d243feced23 80a03f38c7d267688af5d1e63c4d2ffb999e30e2 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: Remove init.vndk-nodef.rc

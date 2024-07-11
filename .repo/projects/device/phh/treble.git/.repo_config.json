@@ -1,0 +1,20 @@
+{
+  "core.repositoryformatversion": [
+    "0"
+  ],
+  "core.filemode": [
+    "true"
+  ],
+  "remote.github.url": [
+    "https://github.com/TrebleDroid/device_phh_treble"
+  ],
+  "remote.github.review": [
+    "review.lineageos.org"
+  ],
+  "remote.github.projectname": [
+    "TrebleDroid/device_phh_treble"
+  ],
+  "remote.github.fetch": [
+    "+refs/heads/*:refs/remotes/github/*"
+  ]
+}

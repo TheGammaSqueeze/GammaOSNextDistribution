@@ -1,0 +1,8 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+[remote "github"]
+	url = https://github.com/LineageOS/android_system_libfmq
+	review = review.lineageos.org
+	projectname = LineageOS/android_system_libfmq
+	fetch = +refs/heads/*:refs/remotes/github/*

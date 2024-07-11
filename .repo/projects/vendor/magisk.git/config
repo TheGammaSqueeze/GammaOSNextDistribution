@@ -1,0 +1,8 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+[remote "github"]
+	url = https://github.com/phhusson/vendor_magisk
+	review = review.lineageos.org
+	projectname = phhusson/vendor_magisk
+	fetch = +refs/heads/*:refs/remotes/github/*

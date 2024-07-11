@@ -1,0 +1,17 @@
+{
+  "core.repositoryformatversion": [
+    "0"
+  ],
+  "core.filemode": [
+    "true"
+  ],
+  "remote.gitlab.url": [
+    "https://gitlab.com/MindTheGapps/vendor_gapps"
+  ],
+  "remote.gitlab.projectname": [
+    "MindTheGapps/vendor_gapps"
+  ],
+  "remote.gitlab.fetch": [
+    "+refs/heads/*:refs/remotes/gitlab/*"
+  ]
+}

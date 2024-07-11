@@ -1,0 +1,9 @@
+43d137e94717639b96f5020607920f734433be92 a31849b2eecc16e99b0a4ccadcc2f2325f2d8697 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: Huawei Kirin 960:: accept broken rpfilter match
+a31849b2eecc16e99b0a4ccadcc2f2325f2d8697 02ec4f6399df213810fa7c01364e2e58388c820d TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: Don't fail on FTP conntracking failing
+02ec4f6399df213810fa7c01364e2e58388c820d 177f6734397d0fa1c170d83b9d8c8e4c808f878b TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: Support no-bpf usecase
+177f6734397d0fa1c170d83b9d8c8e4c808f878b 1a9cb2b80bf83415ac12b0e078c6e27b59159fa1 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: Don't abort in case of cgroup/bpf setup fail, since some devices dont have BPF
+1a9cb2b80bf83415ac12b0e078c6e27b59159fa1 43d137e94717639b96f5020607920f734433be92 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647349 +0000	checkout: moving from 1a9cb2b80bf83415ac12b0e078c6e27b59159fa1 to 43d137e94717639b96f5020607920f734433be92
+43d137e94717639b96f5020607920f734433be92 e0f81f4f0995d7e614bc257ae8e0dc24dac99784 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: Huawei Kirin 960:: accept broken rpfilter match
+e0f81f4f0995d7e614bc257ae8e0dc24dac99784 dc7043c3e8ac1fe776c4de54b305d38ab045b058 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: Don't fail on FTP conntracking failing
+dc7043c3e8ac1fe776c4de54b305d38ab045b058 8df90af2cb9fc6f719cb3cc6651a40ef70da0198 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: Support no-bpf usecase
+8df90af2cb9fc6f719cb3cc6651a40ef70da0198 786d2ed9a1b39243ffa021c3b89d2a2802ed20a5 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: Don't abort in case of cgroup/bpf setup fail, since some devices dont have BPF

@@ -1,0 +1,7 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+[remote "gitlab"]
+	url = https://gitlab.com/MindTheGapps/vendor_gapps
+	projectname = MindTheGapps/vendor_gapps
+	fetch = +refs/heads/*:refs/remotes/gitlab/*

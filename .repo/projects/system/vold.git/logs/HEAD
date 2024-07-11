@@ -1,0 +1,11 @@
+2711bf7059318aa6a61e37392a0aee6263bff0a0 a7b214737674566023b997c365d870367c4f245c TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: Allow deletion of symlink
+a7b214737674566023b997c365d870367c4f245c 77ba04b6efabb7a0386ad6d441b447a8d95bde67 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: Failing to create facedata shouldn't be fatal
+77ba04b6efabb7a0386ad6d441b447a8d95bde67 8131616f44ea590136b88e367c2e113ac322a62c TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: Don't unmount rw-system.sh binds
+8131616f44ea590136b88e367c2e113ac322a62c 36e32d4c3f8b84d94a76cb9291f4a25ce78e0b3e TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: Exfat can be mounted with "exfat" kernel fs driver, or "sdfat" or "texfat" (Samsung and Sony variants)
+36e32d4c3f8b84d94a76cb9291f4a25ce78e0b3e 1f0fe4f1d635998a3aab70d0eb90625e62d57e77 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635839 +0000	am: Every voldmanaged storage is adoptable
+1f0fe4f1d635998a3aab70d0eb90625e62d57e77 2711bf7059318aa6a61e37392a0aee6263bff0a0 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647356 +0000	checkout: moving from 1f0fe4f1d635998a3aab70d0eb90625e62d57e77 to 2711bf7059318aa6a61e37392a0aee6263bff0a0
+2711bf7059318aa6a61e37392a0aee6263bff0a0 83864cdb8c0eac4577112c723432c930e82eaf33 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: Allow deletion of symlink
+83864cdb8c0eac4577112c723432c930e82eaf33 ace345b95b09effbf9203489ff4485df456a2b72 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: Failing to create facedata shouldn't be fatal
+ace345b95b09effbf9203489ff4485df456a2b72 d8090b30ab52830442bd298b5a2d97a9ea7be306 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: Don't unmount rw-system.sh binds
+d8090b30ab52830442bd298b5a2d97a9ea7be306 7102c5dffdc053e962a427c7cd1864475358f4b0 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: Exfat can be mounted with "exfat" kernel fs driver, or "sdfat" or "texfat" (Samsung and Sony variants)
+7102c5dffdc053e962a427c7cd1864475358f4b0 044160e8086a1d35d22a870c72fdb036ec2789ce TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647408 +0000	am: Every voldmanaged storage is adoptable

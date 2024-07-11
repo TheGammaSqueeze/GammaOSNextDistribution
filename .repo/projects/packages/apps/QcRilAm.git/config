@@ -1,0 +1,8 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+[remote "github"]
+	url = https://github.com/AndyCGYan/android_packages_apps_QcRilAm
+	review = review.lineageos.org
+	projectname = AndyCGYan/android_packages_apps_QcRilAm
+	fetch = +refs/heads/*:refs/remotes/github/*

@@ -1,0 +1,8 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+[remote "github"]
+	url = https://github.com/TrebleDroid/device_phh_treble
+	review = review.lineageos.org
+	projectname = TrebleDroid/device_phh_treble
+	fetch = +refs/heads/*:refs/remotes/github/*

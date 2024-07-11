@@ -1,0 +1,25 @@
+f3c6e327fa3973cea10dc27179dfadc757de7068 6c47f1f38a9df4c5a8dfb84b6cacd2afc7062285 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635814 +0000	am: Revert "CompositionEngine: Request device composition for the Udfps touched layer"
+6c47f1f38a9df4c5a8dfb84b6cacd2afc7062285 3b255b035a271c2d69e0a159ece5482b549448dc TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635814 +0000	am: Revert "surfaceflinger: Add support for Udfps extension lib"
+3b255b035a271c2d69e0a159ece5482b549448dc 5451f02158424de40b7e7664909271c6ea8f2b52 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: On Samsung, we need to send a hack-message to HAL to get all Sensors
+5451f02158424de40b7e7664909271c6ea8f2b52 696dc5413c8bfddfc6db26995c4406202eb86944 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: Matching an input with a display uses uniqueId
+696dc5413c8bfddfc6db26995c4406202eb86944 5aa3644b51083feb0c643ad25fd32a4b1bcdaf10 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: unshared_oob didn't exist in O/P, so detect its supported based on vndk version
+5aa3644b51083feb0c643ad25fd32a4b1bcdaf10 a46429510392dde9e578d7b2e09c7dd732863237 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: Remove Samsung system permission on sensors
+a46429510392dde9e578d7b2e09c7dd732863237 379e2ffcb956789206492f46c1a05503fc3dfa7e TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: Mark accelerometer input as sensor exclusively if there are ABS axis
+379e2ffcb956789206492f46c1a05503fc3dfa7e 52589ced17e69154f6be6246a65cafe5ce0c6d9f TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: powermanager: Add support Samsung miscpower HAL
+52589ced17e69154f6be6246a65cafe5ce0c6d9f 595feaca18e4d9aeddbbd40d46dc44dc0eb6176e TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: Fix loading power hidl v1.0
+595feaca18e4d9aeddbbd40d46dc44dc0eb6176e b176e95de56ad160043a8584b0b9d923cb391e99 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: MIUI13 devices hide their vibrator HAL behind non-default name: "vibratorfeature"
+b176e95de56ad160043a8584b0b9d923cb391e99 114f27b590a63a4f68e563fcca704f9ba79af57c TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: FOD support for Samsung and Asus
+114f27b590a63a4f68e563fcca704f9ba79af57c 4785167270a4ecbc6606025938190dab8d9fc119 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635826 +0000	am: Fix light sensor crash on Xiaomi 13
+4785167270a4ecbc6606025938190dab8d9fc119 f3c6e327fa3973cea10dc27179dfadc757de7068 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647366 +0000	checkout: moving from 4785167270a4ecbc6606025938190dab8d9fc119 to f3c6e327fa3973cea10dc27179dfadc757de7068
+f3c6e327fa3973cea10dc27179dfadc757de7068 faa483fab7db3ca640b86b2f313010e126747196 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647398 +0000	am: Revert "CompositionEngine: Request device composition for the Udfps touched layer"
+faa483fab7db3ca640b86b2f313010e126747196 e24906e0866fe2f3273f1fb1e50ea329d939890e TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647398 +0000	am: Revert "surfaceflinger: Add support for Udfps extension lib"
+e24906e0866fe2f3273f1fb1e50ea329d939890e 9fd79cbca0997bc574a0994a48afc07a0b1cb311 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: On Samsung, we need to send a hack-message to HAL to get all Sensors
+9fd79cbca0997bc574a0994a48afc07a0b1cb311 ccd0acd7a6374a82fd9f66003db401f50034413f TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: Matching an input with a display uses uniqueId
+ccd0acd7a6374a82fd9f66003db401f50034413f 4b346d5daa1e046e5a12679fd75236d3a93dea1d TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: unshared_oob didn't exist in O/P, so detect its supported based on vndk version
+4b346d5daa1e046e5a12679fd75236d3a93dea1d b0ddbec7af1cd7a63b05d471b4261fb099578520 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: Remove Samsung system permission on sensors
+b0ddbec7af1cd7a63b05d471b4261fb099578520 6e14b769363601419bf7d90f30680f23062a9490 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: Mark accelerometer input as sensor exclusively if there are ABS axis
+6e14b769363601419bf7d90f30680f23062a9490 0bf33344e6aa9d74997b71f63624b3c8f9fcf66f TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: powermanager: Add support Samsung miscpower HAL
+0bf33344e6aa9d74997b71f63624b3c8f9fcf66f 05b947fc564365770677f6aeed4f36b1a0f9c9fa TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: Fix loading power hidl v1.0
+05b947fc564365770677f6aeed4f36b1a0f9c9fa 11133286582890e6a2b85c43617f455b37b4e583 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: MIUI13 devices hide their vibrator HAL behind non-default name: "vibratorfeature"
+11133286582890e6a2b85c43617f455b37b4e583 057d4098bfae817d83f978efd40d1d932ac3c76a TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: FOD support for Samsung and Asus
+057d4098bfae817d83f978efd40d1d932ac3c76a 774602340eeda0511956efe052ea798fdfb50cd1 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647406 +0000	am: Fix light sensor crash on Xiaomi 13

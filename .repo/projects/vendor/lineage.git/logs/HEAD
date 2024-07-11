@@ -1,0 +1,9 @@
+7dcea8e776df2b19afb32394b068672741fc1a00 f581e71a8bda776cffad7e52f0222e8e35d0ebcd TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635846 +0000	am: vendor_lineage: Log privapp-permissions whitelist violations instead
+f581e71a8bda776cffad7e52f0222e8e35d0ebcd c3c150013d1b7e0e1857b0bdb0c3ecb96a590d5e TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635846 +0000	am: Revert "overlay: Default to night mode"
+c3c150013d1b7e0e1857b0bdb0c3ecb96a590d5e e067e287556f57f8f99379199295c0188cbcbc0d TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635848 +0000	am: build_soong: Disable generated_kernel_headers
+e067e287556f57f8f99379199295c0188cbcbc0d 7095b974148447dc1ba29c19099dfaab842585d2 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635848 +0000	am: vendor_lineage: Disable ADB authentication
+7095b974148447dc1ba29c19099dfaab842585d2 7dcea8e776df2b19afb32394b068672741fc1a00 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647357 +0000	checkout: moving from 7095b974148447dc1ba29c19099dfaab842585d2 to 7dcea8e776df2b19afb32394b068672741fc1a00
+7dcea8e776df2b19afb32394b068672741fc1a00 57be24d566d7d179080836410a463f835a251235 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: vendor_lineage: Log privapp-permissions whitelist violations instead
+57be24d566d7d179080836410a463f835a251235 34d0fcd2f836f99f0765d7d486b2ac1df3fa056e TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647412 +0000	am: Revert "overlay: Default to night mode"
+34d0fcd2f836f99f0765d7d486b2ac1df3fa056e 03f6984631e7d1015cb6db29b685c34df9cd3d47 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647417 +0000	am: build_soong: Disable generated_kernel_headers
+03f6984631e7d1015cb6db29b685c34df9cd3d47 a055d5d9e35e1ac4e23eb0e2189a39f32378e9d3 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647417 +0000	am: vendor_lineage: Disable ADB authentication

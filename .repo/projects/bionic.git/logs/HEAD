@@ -1,0 +1,9 @@
+e0aac7df6f58138dae903b5d456c947a3f8092ea 7880dff5a211b55cc67ab1aa44c3d868559454a9 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635818 +0000	am: Disable vndklite handling
+7880dff5a211b55cc67ab1aa44c3d868559454a9 19449dc5cc316967f1ec6cc1fa40a0d03469613f TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635818 +0000	am: Add new mechanism to fake vendor props on a per-process basis
+19449dc5cc316967f1ec6cc1fa40a0d03469613f 4135fbcdd263400edee3b77ff8374de92017d524 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635818 +0000	am: Rework property overriding
+4135fbcdd263400edee3b77ff8374de92017d524 e022a580d941722b958f4e4c4ec26c53a6c1fca4 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720635818 +0000	am: Add some properties to fake in "keymaster" prop replacement mode, to expose unlocked vbmeta state and orange verifiedbootstate
+e022a580d941722b958f4e4c4ec26c53a6c1fca4 e0aac7df6f58138dae903b5d456c947a3f8092ea TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647346 +0000	checkout: moving from e022a580d941722b958f4e4c4ec26c53a6c1fca4 to e0aac7df6f58138dae903b5d456c947a3f8092ea
+e0aac7df6f58138dae903b5d456c947a3f8092ea 2933cd247e1116fab4a0155d82df8314e55c0817 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647398 +0000	am: Disable vndklite handling
+2933cd247e1116fab4a0155d82df8314e55c0817 00f85ad0303e5efc86a998da54336124c4237c5c TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647399 +0000	am: Add new mechanism to fake vendor props on a per-process basis
+00f85ad0303e5efc86a998da54336124c4237c5c 9271937833a14d6e56f2afbdc19960f2e98645e7 TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647399 +0000	am: Rework property overriding
+9271937833a14d6e56f2afbdc19960f2e98645e7 e3dcc7f314cae4fe2d788468f417496c17a7595c TheGammaSqueeze <thegammasqueeze@gmail.com> 1720647399 +0000	am: Add some properties to fake in "keymaster" prop replacement mode, to expose unlocked vbmeta state and orange verifiedbootstate
