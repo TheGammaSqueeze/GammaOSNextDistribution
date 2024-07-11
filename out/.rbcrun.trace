@@ -1,0 +1,30 @@
+1720650849100799 B microfactory /home/ubuntu/lineage-20-build-td/out/microfactory_Linux
+1720650849100879 B findDeps
+1720650849101031 E findDeps
+1720650849101060 B check compile github.com/google/blueprint/microfactory
+1720650849101126 E check compile github.com/google/blueprint/microfactory
+1720650849101138 B check compile main
+1720650849101169 E check compile main
+1720650849101173 B check link main
+1720650849101185 E check link main
+1720650849101200 B findDeps
+1720650849102390 E findDeps
+1720650849102432 B check compile go.starlark.net/syntax
+1720650849102531 B check compile go.starlark.net/internal/spell
+1720650849102658 E check compile go.starlark.net/internal/spell
+1720650849102705 E check compile go.starlark.net/syntax
+1720650849102717 B check compile go.starlark.net/resolve
+1720650849102800 E check compile go.starlark.net/resolve
+1720650849102814 B check compile go.starlark.net/internal/compile
+1720650849102928 E check compile go.starlark.net/internal/compile
+1720650849102939 B check compile go.starlark.net/starlark
+1720650849103311 E check compile go.starlark.net/starlark
+1720650849103326 B check compile go.starlark.net/starlarkstruct
+1720650849103378 E check compile go.starlark.net/starlarkstruct
+1720650849103388 B check compile rbcrun
+1720650849103449 E check compile rbcrun
+1720650849103461 B check compile main
+1720650849103494 E check compile main
+1720650849103498 B check link main
+1720650849103513 E check link main
+1720650849103518 E microfactory /home/ubuntu/lineage-20-build-td/out/microfactory_Linux
