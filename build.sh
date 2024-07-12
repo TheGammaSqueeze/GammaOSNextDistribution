@@ -1,3 +1,1 @@
-source build/envsetup.sh
-breakfast gsi_tv_arm64 userdebug
-make systemimage
+bash lineage_build_unified/buildbot_unified.sh treble 64VN 64GN
