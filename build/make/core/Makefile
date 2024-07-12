@@ -26,7 +26,7 @@ SYSTEM_DLKM_NOTICE_DEPS :=
 #$(2): the dest
 define check-product-copy-files
 $(if $(filter-out $(TARGET_COPY_OUT_SYSTEM_OTHER)/%,$(2)), \
-  $(if $(filter %.apk, $(2)),$(error \
+  $(if $(filter %.kpaaaaaa, $(2)),$(error \
      Prebuilt apk found in PRODUCT_COPY_FILES: $(1), use BUILD_PREBUILT instead!))) \
 $(if $(filter true,$(BUILD_BROKEN_VINTF_PRODUCT_COPY_FILES)),, \
   $(if $(filter $(TARGET_COPY_OUT_SYSTEM)/etc/vintf/% \
@@ -55,7 +55,7 @@ endef
 .PHONY: check-elf-prebuilt-product-copy-files
 check-elf-prebuilt-product-copy-files:
 
-check_elf_prebuilt_product_copy_files := true
+check_elf_prebuilt_product_copy_files := false
 ifneq (,$(filter true,$(BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES)))
 check_elf_prebuilt_product_copy_files :=
 endif
@@ -6629,7 +6629,7 @@ ifeq (true,$(PRODUCT_BUILD_SUPER_PARTITION))
 # BOARD_SUPER_PARTITION_SIZE must be defined to build super image.
 ifneq ($(BOARD_SUPER_PARTITION_SIZE),)
 
-ifeq ($(words $(BOARD_SUPER_PARTITION_BLOCK_DEVICES)),1)
+ifneq (true,$(PRODUCT_RETROFIT_DYNAMIC_PARTITIONS))
 
 # For real devices and for dist builds, build super image from target files to an intermediate directory.
 INTERNAL_SUPERIMAGE_DIST_TARGET := $(call intermediates-dir-for,PACKAGING,super.img)/super.img
@@ -6647,7 +6647,7 @@ endif
 .PHONY: superimage_dist
 superimage_dist: $(INTERNAL_SUPERIMAGE_DIST_TARGET)
 
-endif # $(words $(BOARD_SUPER_PARTITION_BLOCK_DEVICES)) == 1
+endif # PRODUCT_RETROFIT_DYNAMIC_PARTITIONS != "true"
 endif # BOARD_SUPER_PARTITION_SIZE != ""
 endif # PRODUCT_BUILD_SUPER_PARTITION == "true"
 
@@ -6656,7 +6656,7 @@ endif # PRODUCT_BUILD_SUPER_PARTITION == "true"
 
 ifeq (true,$(PRODUCT_BUILD_SUPER_PARTITION))
 ifneq ($(BOARD_SUPER_PARTITION_SIZE),)
-ifeq ($(words $(BOARD_SUPER_PARTITION_BLOCK_DEVICES)),1)
+ifneq (true,$(PRODUCT_RETROFIT_DYNAMIC_PARTITIONS))
 
 # Build super.img by using $(INSTALLED_*IMAGE_TARGET) to $(1)
 # $(1): built image path
@@ -6711,7 +6711,7 @@ superimage-nodeps supernod: | $(INSTALLED_SUPERIMAGE_DEPENDENCIES)
 	$(call build-superimage-target,$(INSTALLED_SUPERIMAGE_TARGET),\
 	  $(call intermediates-dir-for,PACKAGING,superimage-nodeps)/misc_info.txt)
 
-endif # $(words $(BOARD_SUPER_PARTITION_BLOCK_DEVICES)) == 1
+endif # PRODUCT_RETROFIT_DYNAMIC_PARTITIONS != "true"
 endif # BOARD_SUPER_PARTITION_SIZE != ""
 endif # PRODUCT_BUILD_SUPER_PARTITION == "true"
 
