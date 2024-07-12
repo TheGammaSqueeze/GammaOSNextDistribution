@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2019 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="wifi_eap_error_message_code_32756"><xliff:g id="ssid">%1$s</xliff:g>: error 32756 de l\'autenticación d\'EAP</string>
+    <string-array name="wifi_eap_error_message_code_32760_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: nun pues conectate a Verizon Wi-Fi Access dende fuera l\'área de cobertoria. (Error = 32760)</item>
+    </string-array>
+    <string-array name="wifi_eap_error_message_code_32761_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: nun te soscribiesti a Verizon Wi-Fi Access. Llámanos al 800-922-0204. (Error = 32761)</item>
+    </string-array>
+    <string-array name="wifi_eap_error_message_code_32762_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: hai un problema cola cuenta de Verizon Wi-Fi Access. Llámanos al 800-922-0204. (Error = 32762)</item>
+    </string-array>
+    <string-array name="wifi_eap_error_message_code_32763_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: yá te conectesti a Verizon Wi-Fi Access. (Error = 32763)</item>
+    </string-array>
+    <string-array name="wifi_eap_error_message_code_32764_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: hai un problema al conectate a Verizon Wi-Fi Access. Llámanos al 800-922-0204. (Error = 32764)</item>
+    </string-array>
+    <string-array name="wifi_eap_error_message_code_32765_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: hai un problema cola to cuenta de Verizon Wi-Fi Access. Llámanos al 800-922-0204. (Error = 32765)</item>
+    </string-array>
+    <string-array name="wifi_eap_error_message_code_32766_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: Verizon Wi-Fi Access nun ta disponible dende la to llocalización. Volvi tentalo dempués o prueba dende otru llugar. (Error = 32766)</item>
+    </string-array>
+    <string name="wifi_eap_error_message_code_32767"><xliff:g id="ssid">%1$s</xliff:g>: error 32767 de l\'autenticación d\'EAP</string>
+    <string-array name="wifi_eap_error_message_code_32767_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: hai un problema al conectate a Verizon Wi-Fi Access. Volvi tentalo dempués o prueba dende otru llugar.</item>
+    </string-array>
+    <string name="wifi_eap_error_message_code_16384"><xliff:g id="ssid">%1$s</xliff:g>: error 16384 de l\'autenticación d\'EAP</string>
+    <string-array name="wifi_eap_error_message_code_16384_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: hai un problema al conectate a Verizon Wi-Fi Access pola mor del error 16384.</item>
+    </string-array>
+    <string name="wifi_eap_error_message_code_16385"><xliff:g id="ssid">%1$s</xliff:g>: error 16385 de l\'autenticación d\'EAP</string>
+    <string-array name="wifi_eap_error_message_code_16385_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: hai un problema al conectate a Verizon Wi-Fi Access pola mor del error 16385.</item>
+    </string-array>
+    <string name="wifi_eap_error_message_unknown_error_code"><xliff:g id="ssid">%1$s</xliff:g>: error de l\'autenticación d\'EAP, códigu d\'error desconocíu</string>
+    <string-array name="wifi_eap_error_message_unknown_error_code_carrier_overrides">
+        <item><xliff:g id="carrier_id_prefix">:::1839:::</xliff:g><xliff:g id="ssid">%1$s</xliff:g>: hai un problema al conectate a Verizon Wi-Fi Access.</item>
+    </string-array>
+    <string name="wifi_interface_priority_title">«<xliff:g id="app">%1$s</xliff:g>» quier usar un recursu de rede</string>
+    <string name="wifi_interface_priority_message">Esta aición pue causar problemes a l\'aplicación «<xliff:g id="apps">%3$s</xliff:g>».</string>
+    <string name="wifi_interface_priority_message_plural">Esta aición pue causar problemes a estes aplicaciones: <xliff:g id="apps">%3$s</xliff:g>.</string>
+    <string name="wifi_interface_priority_reject">Nun permitir</string>
+    <string name="wifi_ca_cert_dialog_title">¿Esta rede ye d\'enfotu?</string>
+    <string name="wifi_ca_cert_dialog_continue_text">Sí, conectase</string>
+    <string name="wifi_ca_cert_dialog_abort_text">Non, nun se conectar</string>
+    <string name="wifi_ca_cert_dialog_message_hint">Permite qu\'esta rede se conecte namás si la información d\'abaxo paez correuta.\n\n</string>
+    <string name="wifi_ca_cert_dialog_message_server_name_text">Nome del sirvidor:\n<xliff:g id="value">%1$s</xliff:g>\n\n</string>
+    <string name="wifi_ca_cert_dialog_message_issuer_name_text">Nome del emisor:\n<xliff:g id="value">%1$s</xliff:g>\n\n</string>
+    <string name="wifi_ca_cert_dialog_message_organization_text">Organización:\n<xliff:g id="value">%1$s</xliff:g>\n\n</string>
+    <string name="wifi_ca_cert_dialog_message_expiration_text">Caducidá del certificáu:\n<xliff:g id="value">%1$s</xliff:g>\n\n</string>
+    <string name="wifi_ca_cert_dialog_message_signature_name_text">Buelga SHA-256:\n<xliff:g id="value">%1$s</xliff:g>\n\n</string>
+    <string name="wifi_ca_cert_dialog_message_contact_text">Contautu:\n<xliff:g id="value">%1$s</xliff:g>\n\n</string>
+    <string name="wifi_ca_cert_notification_title">La rede precisa ser verificada</string>
+    <string name="wifi_ca_cert_notification_message">Revisa los detalles de la rede «<xliff:g id="ssid">%1$s</xliff:g>» enantes de conectate. Toca equí pa siguir.</string>
+    <string name="wifi_ca_cert_failed_to_install_ca_cert">La instalación del certificáu falló.</string>
+    <string name="wifi_tofu_invalid_cert_chain_title">Nun se pue conectar a «<xliff:g id="value">%1$s</xliff:g>»</string>
+    <string name="wifi_tofu_invalid_cert_chain_message">La cadena de certificaos del sirvidor ye inválida.</string>
+    <string name="wifi_ca_cert_dialog_preT_title">Nun se pue verificar esta rede</string>
+    <string name="wifi_ca_cert_dialog_preT_continue_text">Caltener la conexón</string>
+    <string name="wifi_ca_cert_dialog_preT_abort_text">Desconectase agora</string>
+    <string name="wifi_ca_cert_dialog_preT_message_hint">A la rede «<xliff:g id="ssid">%1$s</xliff:g>» fálta-y un certificáu.</string>
+    <string name="wifi_ca_cert_dialog_preT_message_link">Conoz cómo amestar certificaos</string>
+    <string name="wifi_ca_cert_notification_preT_title">Nun se pue verificar esta rede</string>
+    <string name="wifi_ca_cert_notification_preT_message">A la rede «<xliff:g id="ssid">%1$s</xliff:g>» fálta-y un certificáu.. Toca pa saber cómo amestar certificaos.</string>
+    <string name="wifi_ca_cert_notification_preT_continue_text">Conectase de toes toes</string>
+    <string name="wifi_ca_cert_notification_preT_abort_text">Nun se conectar</string>
+    <string name="wifi_enable_request_dialog_title">¿Quies permitir a «<xliff:g id="app_name" example="App123">%1$s</xliff:g>» qu\'habilite\'l Wi\u2011Fi?</string>
+    <string name="wifi_enable_request_dialog_message">Pues inhabilitar el Wi\u2011Fi na configuración rápida</string>
+    <string name="wifi_enable_request_dialog_negative_button">Nun permitir</string>
+</resources>

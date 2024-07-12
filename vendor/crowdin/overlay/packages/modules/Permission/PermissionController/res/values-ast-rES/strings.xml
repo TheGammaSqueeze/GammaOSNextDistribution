@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2007 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="available">Disponible</string>
+    <string name="blocked">Bloquióse</string>
+    <string name="auto_permission_manager_summary">Xestiona l\'accesu a los datos del calendariu, de los rexistros de llamaes y más</string>
+    <string name="granted_permission_decision">Concediesti a «<xliff:g id="app_name" example="Google Maps">%1$s</xliff:g>» l\'accesu a «<xliff:g id="permission_name" example="contacts">%2$s</xliff:g>»</string>
+    <string name="denied_permission_decision">Neguesti a «<xliff:g id="app_name" example="Google Maps">%1$s</xliff:g>» l\'accesu a «<xliff:g id="permission_name" example="contacts">%2$s</xliff:g>»</string>
+    <string name="days_ago">{count, plural,
+        one {}=0    {Güei}
+        =1    {Hai 1 día}
+        other {Hai # díes}
+        }</string>
+    <string name="additional_permissions_more">{count, plural,
+        one {}=1      {# más}
+        other   {# más}
+    }</string>
+    <string name="storage_supergroup_warning_allow">Esta aplicación diseñóse pa una versión antigua d\'Android. Si concedes esti permisu, va permitise l\'accesu a tol almacenamientu (incluyíos los ficheros de videu, d\'imaxe, de música, d\'audiu y d\'otru tipu).</string>
+    <string name="storage_supergroup_warning_deny">Esta aplicación diseñóse pa una versión antigua d\'Android. Si niegues esti permisu, va negase l\'accesu a tol almacenamientu (incluyíos los ficheros de videu, d\'imaxe, de música, d\'audiu y d\'otru tipu)</string>
+    <string name="menu_show_7_days_data">Amosar los últimos 7 díes</string>
+    <string name="menu_show_24_hours_data">Amosar les últimes 24 hores</string>
+    <string name="deny_read_media_visual_warning">Esta aplicación diseñóse pa una versión antigua d\'Android. Si-y niegues l\'accesu a les semeyes y los vídeos, tamién vas nega-y l\'accesu a la música y otros ficheros d\'audiu.</string>
+    <string name="deny_read_media_aural_warning">Esta aplicación diseñóse pa una versión antigua d\'Android. Si-y niegues l\'accesu a la música y otros ficheros d\'audiu, tamién vas nega-y l\'accesu a les semeyes y los vídeos.</string>
+    <string name="auto_permission_usage_summary">Ver qué aplicaciones usaron los permisos apocayá</string>
+    <string name="permission_group_usage_subtitle_7d">Cronoloxía de cuándo usaron les aplicaciones el permisu «<xliff:g id="permgroup" example="Location">%1$s</xliff:g>» nos últimos 7 díes</string>
+    <string name="manage_permission_summary">Controla l\'accesu de les aplicaciones a «<xliff:g id="permgroup" example="Location">%1$s</xliff:g>»</string>
+    <string name="duration_used_days">{count, plural,
+        one {}=1      {1 día}
+        other   {# díes}
+    }</string>
+    <string name="duration_used_hours">{count, plural,
+        one {}=1      {1 hora}
+        other   {# hores}
+    }</string>
+    <string name="duration_used_minutes">{count, plural,
+        one {}=1      {1 min}
+        other   {# mins}
+    }</string>
+    <string name="duration_used_seconds">{count, plural,
+        one {}=1      {1 s}
+        other   {# s}
+    }</string>
+    <string name="permission_usage_preference_summary_not_used_7d">Nun s\'usó nos últimos 7 díes</string>
+    <string name="permission_usage_preference_label">{count, plural,
+        one {}=1      {Permisu usáu por 1 aplicación}
+        other   {Permisu usáu por # aplicaciones}
+    }</string>
+    <string name="unused_apps_category_title">Configuración d\'aplic. non usaes</string>
+    <string name="unused_apps_label_v2">Posar l\'actividá de l\'apli. si nun s\'usa</string>
+    <string name="unused_apps_summary">Quita los permisos, desanicia los ficheros temporales y para los avisos</string>
+    <string name="unused_apps_page_tv_summary">Si una aplicación nun s\'usa demientres unos meses:\n\nQuítense los permisos pa protexer los tos datos\n\n\u2022Desaníciense los ficheros temporales pa lliberar espaciu\n\nPa volver conceder los permisos, abri l\'aplicación.</string>
+    <string name="permission_description_summary_read_media_aural">Les aplicaciones con esti permisu puen acceder a la música y otros ficheros d\'audiu d\'esti preséu</string>
+    <string name="permission_description_summary_read_media_visual">Les aplicaciones con esti permisu puen acceder a les semeyes y los vídeos d\'esti preséu</string>
+    <string name="storage_footer_hyperlink_text">Ver más aplicaciones que puen acceder a tolos ficheros</string>
+    <string name="days">{count, plural,
+        one {}=1      {1 día}
+        other   {# díes}
+    }</string>
+    <string name="hours">{count, plural,
+        one {}=1      {1 hora}
+        other   {# hores}
+    }</string>
+    <string name="minutes">{count, plural,
+        one {}=1      {1 minutu}
+        other   {# minutos}
+    }</string>
+    <string name="seconds">{count, plural,
+        one {}=1      {1 segundu}
+        other   {# segundos}
+    }</string>
+    <string name="unused_apps_notification_title">{count, plural,
+        one {}=1      {# aplicación ensin usar}
+        other   {# aplicaciones ensin usar}
+    }</string>
+    <string name="post_drive_permission_decision_reminder_title">Comprobar los permisos de recién</string>
+    <string name="post_drive_permission_decision_reminder_summary_1_app_1_permission">Mentanto conduces, concediesti a «<xliff:g id="app" example="Waze">%1$s</xliff:g>» l\'accesu a «<xliff:g id="permission" example="location">%2$s</xliff:g>»</string>
+    <string name="post_drive_permission_decision_reminder_summary_1_app_2_permissions">Mentanto conduces, concediesti a «<xliff:g id="app" example="Waze">%1$s</xliff:g>» l\'accesu a «<xliff:g id="permission" example="location">%2$s</xliff:g>» y «<xliff:g id="permission_2" example="microphone">%3$s</xliff:g>»</string>
+    <string name="post_drive_permission_decision_reminder_summary_1_app_multi_permission">Mentanto conduces, concediesti <xliff:g id="count" example="2">%1$d</xliff:g> permisos a «<xliff:g id="app" example="Waze">%2$s</xliff:g>»</string>
+    <string name="post_drive_permission_decision_reminder_summary_multi_apps">{count, plural,
+        one {}=1      {Mentanto conducíes, concediesti l\'accesu a <xliff:g id="app" example="Waze">%1$s</xliff:g> y # aplicación más}
+        other   {Mentanto conducíes, concediesti l\'accesu a <xliff:g id="app" example="Waze">%1$s</xliff:g> y # aplicaciones más}
+        }</string>
+    <string name="go_to_settings">Dir a Configuración</string>
+    <string name="notification_listener_reminder_notification_content">«<xliff:g id="app_name" example="Gmail">%s</xliff:g>» pue lleer tolos avisos.</string>
+    <string name="notification_listener_reminder_notification_content_plural">{count, plural,
+        one {}=1      {«<xliff:g id="app_name" example="Gmail">%s</xliff:g>» pue lleer tolos avisos.}
+        other   {# aplicaciones puen lleer tolos avisos.}
+        }</string>
+    <string name="app_perms_7d_access">Últimu accesu: <xliff:g id="time_date" example="Jan 3">%1$s</xliff:g> (<xliff:g id="time_date" example="12:42 PM">%2$s</xliff:g>)</string>
+    <string name="app_perms_7d_access_background">Últimu accesu: <xliff:g id="time_date" example="Jan 3">%1$s</xliff:g> (<xliff:g id="time_date" example="12:42 PM">%2$s</xliff:g>) \u2022 Permítese tol tiempu</string>
+    <string name="app_perms_7d_access_media_only">Últimu accesu: <xliff:g id="time_date" example="Jan 3">%1$s</xliff:g> (<xliff:g id="time_date" example="12:42 PM">%2$s</xliff:g>) \u2022 Conteníu multimedia</string>
+    <string name="app_perms_7d_access_all_files">Últimu accesu: <xliff:g id="time_date" example="Jan 3">%1$s</xliff:g> (<xliff:g id="time_date" example="12:42 PM">%2$s</xliff:g>) \u2022 Tolos ficheros</string>
+    <string name="settings">Configuración</string>
+    <string name="role_dialer_request_description">Esta aplicación va poder acceder a la cámara, a los contautos, al mircrófonu, a los SMS y al teléfonu</string>
+    <string name="role_sms_request_description">Esta aplicación va poder acceder a los ficheros y al conteníu multimedia, a la cámara, a los contautos, al mircrófonu, a los SMS, al teléfonu</string>
+    <string name="role_automotive_navigation_label">Aplicación de navegación predeterminada</string>
+    <string name="role_automotive_navigation_short_label">Aplicación de navegación</string>
+    <string name="role_automotive_navigation_description">Aplicaciones que fornen busques de puntos d\'interés ya indicaciones de navegación pasu a pasu</string>
+    <string name="role_automotive_navigation_request_title">¿Quies predeterminar l\'aplicación de navegación «<xliff:g id="app_name" example="Super Navigation">%1$s</xliff:g>»?</string>
+    <string name="role_app_streaming_description">«<xliff:g id="app_name" example="Cross-Device Communciation">%1$s</xliff:g>» va poder interactuar colos avisos y emitir aplicaciones al preséu conectáu.</string>
+    <string name="role_companion_device_computer_description">Esti serviciu comparte\'l conteníu multimedia y los avisos del teléfonu con otros preseos.</string>
+    <string name="settings_button">Configuración</string>
+    <string name="adjust_user_sensitive_title">Configuración avanzada</string>
+    <string name="menu_adjust_user_sensitive">Configuración avanzada</string>
+    <string name="permgrouprequest_storage_q_to_s">¿Quies permitir a
+        &lt;b&gt;<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>&lt;/b&gt; qu\'acceda a les &lt;b&gt;semeyes, vídeos, música, y ficheros d\'audiu&lt;/b&gt; d\'esti preséu?</string>
+    <string name="permgrouprequest_storage_pre_q">¿Quies permitir a
+        &lt;b&gt;<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>&lt;/b&gt; qu\'acceda a les &lt;b&gt;semeyes, vídeos, música, y otros ficheros&lt;/b&gt; d\'esti preséu?</string>
+    <string name="permgrouprequest_read_media_aural">¿Quies permitir a &lt;b&gt;<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>&lt;/b&gt; qu\'acceda a los ficheros de música y d\'audiu del preséu?</string>
+    <string name="permgrouprequest_read_media_visual">¿Quies permitir a &lt;b&gt;<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>&lt;/b&gt; qu\'acceda a les semeyes y vídeos d\'esti preséu?</string>
+    <string name="permgroupupgraderequestdetail_sensors">Esta aplicación quier acceder a los datos de los sensores de les tos constantes vitales tol tiempu, hasta cuando nun la uses. Pa facer esti cambéu, <annotation id="link">vete a la configuración</annotation></string>
+    <string name="permgroupbackgroundrequest_sensors">¿Quies permitir a
+        &lt;b&gt;<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>&lt;/b&gt; qu\'acceda a los datos de los sensores de les tos constantes vitales?</string>
+    <string name="permgroupbackgroundrequestdetail_sensors">Pa dexar qu\'esta aplicación acceda a los datos de los sensores corporales tol tiempu, hasta cuando nun la uses, <annotation id="link">vete a la configuración</annotation></string>
+    <string name="permgroupupgraderequest_sensors">¿Quies siguir permitiendo a &lt;b&gt;<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>&lt;/b&gt; qu\'acceda a los datos de los sensores corporales mentanto ta n\'usu?</string>
+    <string name="permgrouprequest_notifications">¿Quies permitir a 
+        &lt;b&gt;<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>&lt;/b&gt; que t\'unvie avisos?</string>
+    <string name="privdash_label_7d">Los últimos\n7 díes</string>
+    <string name="exempt_mic_camera_info_label">L\'aplicación «<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>» ta protexida por Android. Como los tos datos se procesen nesti preséu, l\'usu\'l permisu d\'esta aplicación nun s\'amuesa na barra d\'estáu nin nel panel de privacidá. </string>
+    <string name="exempt_info_label">L\'aplicación «<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>» ta protexida por Android. Como los tos datos se procesen nesti preséu, l\'usu\'l permisu d\'esta aplicación nun s\'amuesa nel panel de privacidá. </string>
+    <string name="blocked_camera_title">La cámara del preséu ta bloquiada</string>
+    <string name="blocked_microphone_title">El micrófonu del preséu ta bloquiáu</string>
+    <string name="blocked_location_title">La llocalización del preséu ta desactivada</string>
+    <string name="blocked_sensor_summary">P\'aplicaciones y servicios</string>
+    <string name="blocked_mic_summary">Ye posible que se sigan compartiendo los datos del micrófonu cuando llames a un númberu d\'emerxencia.</string>
+    <string name="blocked_sensor_button_label">Camudar</string>
+    <string name="safety_center_dashboard_page_title">Seguranza y privacidá</string>
+    <string name="safety_center_rescan_button">Analizar</string>
+    <string name="security_settings">Configuración de seguranza</string>
+    <string name="sensor_permissions_qs">Permisos de los sensores</string>
+    <string name="privacy_controls_qs">Controles de privacidá</string>
+    <string name="permissions_removed_qs">Quitóse\'l permisu</string>
+    <string name="camera_usage_qs">Ver más usos de la cámara</string>
+    <string name="microphone_usage_qs">Ver más usos del micrófonu</string>
+    <string name="remove_camera_qs">Quitar el permisu de la cámara</string>
+    <string name="remove_microphone_qs">Quitar el permisu del micrófonu</string>
+    <string name="manage_service_qs">Xestionar el serviciu</string>
+    <string name="manage_permissions_qs">Xestionar los permisos</string>
+    <string name="active_call_usage_qs">N\'usu por una llamada de teléfonu</string>
+    <string name="recent_call_usage_qs">Usáu de recién nuna llamada de teléfonu</string>
+    <string name="active_app_usage_qs">N\'usu por «<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>»</string>
+    <string name="recent_app_usage_qs">Usáu de recién por «<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>»</string>
+    <string name="active_app_usage_1_qs">N\'usu por «<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>» (<xliff:g id="attribution_label" example="For Wallet">%2$s</xliff:g>)</string>
+    <string name="recent_app_usage_1_qs">Usáu de recién por «<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>» (<xliff:g id="attribution_label" example="For Wallet">%2$s</xliff:g>)</string>
+    <string name="active_app_usage_2_qs">N\'usu por «<xliff:g id="app_name" example="Gmail">%1$s</xliff:g>» (<xliff:g id="attribution_label" example="For Wallet">%2$s</xliff:g>  \u2022 <xliff:g id="proxy_label" example="Speech services">%3$s</xliff:g>)</string>
+    <string name="recent_app_usage_2_qs">Usáu de recién por «<xliff:g id="app_name" example="Gmail">%1$s</xliff:g> »(<xliff:g id="attribution_label" example="For Wallet">%2$s</xliff:g>  \u2022 <xliff:g id="proxy_label" example="Speech services">%3$s</xliff:g>)</string>
+    <string name="safety_privacy_qs_tile_title">Seguranza y privacidá</string>
+    <string name="safety_privacy_qs_tile_subtitle">Comprobar l\'estáu</string>
+    <string name="media_confirm_dialog_positive_button">Confirmar</string>
+    <string name="media_confirm_dialog_title_a_to_p_aural_allow">Tamién va permitise l\'accesu a otros ficheros</string>
+    <string name="media_confirm_dialog_title_a_to_p_aural_deny">Tampoco va permitise l\'accesu a otros ficheros</string>
+    <string name="media_confirm_dialog_title_a_to_p_visual_allow">Tamién va permitise l\'accesu a otros ficheros</string>
+    <string name="media_confirm_dialog_title_a_to_p_visual_deny">Tampoco va permitise l\'accesu a otros ficheros</string>
+    <string name="media_confirm_dialog_title_q_to_s_aural_allow">Tamién va permitise l\'accesu a semeyes y vídeos</string>
+    <string name="media_confirm_dialog_title_q_to_s_aural_deny">Tampoco va permitise l\'accesu a semeyes y vídeos</string>
+    <string name="media_confirm_dialog_title_q_to_s_visual_allow">Tamién va permitise l\'accesu a ficheros de música y de videu</string>
+    <string name="media_confirm_dialog_title_q_to_s_visual_deny">Tampoco va permitise l\'accesu a ficheros de música y de videu</string>
+    <string name="media_confirm_dialog_message_a_to_p_aural_allow">Esta aplicación nun ye compatible cola última versión d\'Android. Si esta aplicación pue acceder a ficheros de música y d\'audiu, tamién va poder acceder a semeyes, vídeos y otros ficheros.</string>
+    <string name="media_confirm_dialog_message_a_to_p_aural_deny">Esta aplicación nun ye compatible cola última versión d\'Android. Si esta aplicación nun pue acceder a ficheros de música y d\'audiu, tampoco va poder acceder a semeyes, vídeos y otros ficheros.</string>
+    <string name="media_confirm_dialog_message_a_to_p_visual_allow">Esta aplicación nun ye compatible cola última versión d\'Android. Si esta aplicación pue acceder a semeyes y vídeos, tamién va poder acceder a ficheros de música, d\'audiu y d\'otru tipu.</string>
+    <string name="media_confirm_dialog_message_a_to_p_visual_deny">Esta aplicación nun ye compatible cola última versión d\'Android. Si esta aplicación pue acceder a semeyes y vídeos, tampoco va poder acceder a ficheros de música, d\'audiu y d\'otru tipu.</string>
+    <string name="media_confirm_dialog_message_q_to_s_aural_allow">Esta aplicación nun ye compatible cola última versión d\'Android. Si esta aplicación pue acceder a ficheros de música y d\'audiu, tamién va poder acceder a semeyes y vídeos.</string>
+    <string name="media_confirm_dialog_message_q_to_s_aural_deny">Esta aplicación nun ye compatible cola última versión d\'Android. Si esta aplicación pue acceder a ficheros de música y d\'audiu, tampoco va poder acceder a semeyes y vídeos.</string>
+    <string name="media_confirm_dialog_message_q_to_s_visual_allow">Esta aplicación nun ye compatible cola última versión d\'Android. Si esta aplicación pue acceder a semeyes y vídeos, tamién va poder acceder a ficheros de música y d\'audiu.</string>
+    <string name="media_confirm_dialog_message_q_to_s_visual_deny">Esta aplicación nun ye compatible cola última versión d\'Android. Si esta aplicación nun pue acceder a semeyes y vídeos, tampoco va poder acceder a ficheros de música y d\'audiu.</string>
+</resources>

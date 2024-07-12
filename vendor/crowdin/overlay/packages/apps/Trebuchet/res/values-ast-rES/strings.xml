@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+* Copyright (C) 2008 The Android Open Source Project
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="add_item_request_drag_hint">Ten primíu\'l widget pa movelu pela pantalla d\'aniciu</string>
+    <string name="add_to_home_screen">Amestar a la pantalla d\'aniciu</string>
+    <string name="suggested_widgets_header_title">Suxerencies</string>
+    <string name="widget_education_content">Pa consiguir información ensin abrir les aplicaciones, pues amestar widgets a la pantalla d\'aniciu</string>
+    <string name="out_of_space">Nun hai sitiu nesta pantalla d\'aniciu</string>
+    <string name="permlab_read_settings">llectura de la configuración y los atayos de la pantalla d\'aniciu</string>
+    <string name="permdesc_read_settings">Permite a l\'aplicación que llea la configuración
+        y los atayos de la pantalla d\'aniciu.</string>
+    <string name="permlab_write_settings">escritura de la configuración de los atayos de la pantalla d\'aniciu</string>
+    <string name="permdesc_write_settings">Permite a l\'aplicación que camude la configuración
+        y los atayos de la pantalla d\'aniciu.</string>
+    <string name="dotted_app_label">        {count, plural,
+            one {}=1      {«{app_name}» tien # avisu}
+            other   {«{app_name}» tien # avisos}
+        }
+    </string>
+    <string name="allow_rotation_title">Permitir el voltéu de la pantalla d\'aniciu</string>
+    <string name="developer_options_title">Opciones pa desendolcadores</string>
+    <string name="auto_add_shortcuts_label">Amestar los iconos d\'aplicaciones a la pantalla d\'aniciu</string>
+    <string name="dialog_update_title">Ríquese anovar l\'aplicación</string>
+    <string name="dialog_update_message">Nun s\'anovó l\'aplicación d\'esti iconu. Pues anovala manualmente pa volver activar esti atayu o quitar l\'iconu.</string>
+    <string name="dialog_update">Anovar</string>
+    <string name="action_add_to_workspace">Amestar a la pantalla d\'aniciu</string>
+    <string name="move_to_empty_cell_description">Mover a la filera <xliff:g id="number" example="1">%1$s</xliff:g>, columna <xliff:g id="number" example="1">%2$s</xliff:g> en <xliff:g id="string" example="Home screen 2 of 4">%3$s</xliff:g></string>
+    <string name="action_move_to_workspace">Mover a la pantalla s\'aniciu</string>
+    <string name="work_apps_pause_btn_text">Posar les aplicaciones llaborales</string>
+    <string name="search_pref_screen_title">Buscar nel teléfonu</string>
+    <string name="search_pref_screen_title_tablet">Buscar na tableta</string>
+</resources>

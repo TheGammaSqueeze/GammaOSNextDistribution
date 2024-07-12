@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2017 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_label">Xestor de preseos complementarios</string>
+    <string name="confirmation_title">Permitir a &lt;strong&gt;<xliff:g id="app_name" example="GMS">%1$s</xliff:g>&lt;/strong&gt; qu\'acceda al preséu &lt;strong&gt;<xliff:g id="device_name" example="ASUS ZenWatch 2">%2$s</xliff:g>&lt;/strong&gt;</string>
+    <string name="profile_name_watch">reló</string>
+    <string name="summary_watch">Esta aplicación ye necesaria pa xestionar «<xliff:g id="device_name" example="My Watch">%1$s</xliff:g>». «<xliff:g id="app_name" example="Android Wear">%2$s</xliff:g>» va poder interactuar colos avisos y acceder a los permisos de Teléfonu, SMS, Contautos, Calendariu, Rexistros de llamaes y Preseos cercanos.</string>
+    <string name="permission_apps">Aplicaciones</string>
+    <string name="permission_apps_summary">Emite les aplicaciones del teléfonu</string>
+    <string name="title_app_streaming">¿Quies permitir que l\'aplicación «&lt;strong&gt;<xliff:g id="app_name" example="Exo">%1$s</xliff:g>&lt;/strong&gt;» acceda a esta información del teléfonu?</string>
+    <string name="helper_title_app_streaming">Servicios multipreséu</string>
+    <string name="helper_summary_app_streaming">«<xliff:g id="app_name" example="GMS">%1$s</xliff:g>» ta solicitando permisu en nome del preséu «<xliff:g id="device_type" example="Chromebook">%2$s</xliff:g>» pa emitir aplicaciones ente preseos</string>
+    <string name="title_computer">Permitir a &lt;strong&gt;<xliff:g id="app_name" example="GMS">%1$s</xliff:g>&lt;/strong&gt; qu\'acceda a esta información del teléfonu</string>
+    <string name="permission_notification">Avisos</string>
+    <string name="permission_notification_summary">Pue lleer tolos avisos, incluyida la información como los contautos, les semeyes y los mensaxes</string>
+    <string name="permission_storage">Conteníu multimedia</string>
+    <string name="helper_title_computer">Servicios de Google Play</string>
+    <string name="helper_summary_computer">«<xliff:g id="app_name" example="GMS">%1$s</xliff:g>» ta solicitando permisu en nome del preséu «<xliff:g id="device_type" example="Chromebook">%2$s</xliff:g>» p\'acceder al conteníu multimedia y los avisos del preséu</string>
+    <string name="profile_name_generic">preséu</string>
+    <string name="consent_yes">Permitir</string>
+    <string name="consent_no">Nun permitir</string>
+    <string name="consent_back">Atrás</string>
+    <string name="permission_sync_confirmation_title">Tresferencia de los permisos de les
+        aplicaciones al reló</string>
+    <string name="permission_sync_summary">P\'acencellar la configuración del reló,
+        les aplicaciones instalaes nelli demientres la configuración van usar los mesmos permisos que los del teléfonu.\n\n
+        Estos permisos puen incluyir l\'accesu al micrófonu y a la llocalización del reló.</string>
+    <string name="vendor_icon_description">Iconu de l\'aplicación</string>
+    <string name="vendor_header_button_description">Botón «Más información»</string>
+</resources>

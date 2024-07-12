@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2018 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="clock_title">Reló personalizáu</string>
+    <string name="clock_description">Escueyi unu</string>
+    <string name="clock_picker_entry_content_description">Camudar un reló personalizáu</string>
+    <string name="clock_settings_title">Conf. del relò</string>
+    <string name="clock_color_and_size_title">Color/tamañu\'l reló</string>
+    <string name="clock_color_and_size_description"><xliff:g name="color">%1$s</xliff:g>, <xliff:g name="size">%2$s</xliff:g></string>
+    <string name="clock_color_red">Coloráu</string>
+    <string name="clock_color_orange">Naranxa</string>
+    <string name="clock_color_yellow">Mariellu</string>
+    <string name="clock_color_green">Verde</string>
+    <string name="clock_color_blue">Azul</string>
+    <string name="clock_color_indigo">Índigu</string>
+    <string name="clock_color_violet">Violeta</string>
+    <string name="clock_color_gray">Buxu</string>
+    <string name="clock_color_teal">Verde azulao</string>
+    <string name="clock_size">Tamañu</string>
+    <string name="clock_size_dynamic">Dinámicu</string>
+    <string name="clock_size_dynamic_description">El tamañu del reló camuda acordies col conteníu de la pantalla de bloquéu</string>
+    <string name="clock_size_large">Grande</string>
+    <string name="clock_size_small">Pequeñu</string>
+    <string name="wallpaper_color_tab">Colores del fondu</string>
+    <string name="wallpaper_color_subheader">Iconos, testu y más combinen colos colores del fondu</string>
+    <string name="wallpaper_color_title">Color del fondu de pantalla</string>
+    <string name="preset_color_tab">Colores básicos</string>
+    <string name="preset_color_tab_2">Otros colores</string>
+    <string name="preset_color_subheader">Escueyi cualesquier color pa los iconos, el reló y más</string>
+    <string name="color_changed">El color camudó</string>
+    <string name="adaptive_color_title">Dinámicu</string>
+    <string name="color_picker_title">Colores del sistema</string>
+    <string name="keyguard_slot_name_bottom_start">Atayu esquierdu</string>
+    <string name="keyguard_slot_name_bottom_end">Atayu derechu</string>
+    <string name="keyguard_affordance_none">Nada</string>
+    <string name="keyguard_affordance_enablement_dialog_title">Pa seleicionar «<xliff:g id="appName" example="Wallet">%1$s</xliff:g>», comprueba lo siguiente</string>
+    <string name="keyguard_affordance_enablement_dialog_action_template">Abrir «<xliff:g id="appName" example="Wallet">%1$s</xliff:g>»</string>
+    <string name="keyguard_affordance_enablement_dialog_message">P\'amestar l\'aplicación «<xliff:g id="appName" example="Wallet">%1$s</xliff:g>» como atayu:</string>
+    <string name="keyguard_affordance_enablement_dialog_dismiss_button">Fecho</string>
+    <string name="keyguard_quick_affordance_title">Atayos</string>
+    <string name="keyguard_quick_affordance_section_title">Atayos</string>
+    <string name="keyguard_quick_affordance_two_selected_template"><xliff:g id="first">%1$s</xliff:g>, <xliff:g id="second">%2$s</xliff:g></string>
+    <string name="keyguard_quick_affordance_none_selected">Nada</string>
+    <string name="notifications_section_title">Avisos</string>
+    <string name="show_notifications_on_lock_screen">Amosar los avisos na pantalla de bloquéu</string>
+    <string name="hide_notifications_on_lock_screen">Anubrir los avisos na pantalla de bloquéu</string>
+    <string name="more_settings_section_title">Más opciones</string>
+    <string name="more_settings_section_description">Testu na pantalla de bloquéu, «En reproducción» y más</string>
+    <string name="more_colors">Más colores</string>
+    <string name="content_description_default_color_option">Opción de color predeterminada</string>
+    <string name="content_description_color_option">Opción de color «<xliff:g name="color_number" example="1">%1$d</xliff:g>»</string>
+</resources>

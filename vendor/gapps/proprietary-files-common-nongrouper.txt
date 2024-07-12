@@ -1,0 +1,1 @@
+-product/priv-app/GoogleRestore/GoogleRestore.apk;PRESIGNED

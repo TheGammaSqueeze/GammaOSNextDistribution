@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2017 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="set_wallpaper_both_destination">Pantalles d\'aniciu y de bloquéu</string>
+    <string name="settings_button_label">      Configuración
+    </string>
+    <string name="tab_effects">Efeutos</string>
+    <string name="tab_share">Compartir</string>
+    <string name="my_photos">Semeyes de mio</string>
+    <string name="configure_wallpaper">Configuración…</string>
+    <string name="delete_wallpaper_confirmation">¿Quies desaniciar esti fondu del preséu?</string>
+    <string name="cancel">Encaboxar</string>
+    <string name="settings_snackbar_description">Activa los ficheros y el conteníu multimedia en Configuación.</string>
+    <string name="settings_snackbar_enable">Activar</string>
+    <string name="open_my_photos">Abrir «Semeyes de mio»</string>
+    <string name="reset">Reafitar</string>
+    <string name="reset_confirmation_dialog_title">¿Quies reafitar los cambeos?</string>
+    <string name="reset_confirmation_dialog_message">Los cambeos nun van guardase</string>
+    <string name="more_wallpapers">Más fondos de pantalla</string>
+</resources>
