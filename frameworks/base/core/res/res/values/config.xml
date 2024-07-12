@@ -872,7 +872,7 @@
              1 - MODE_NIGHT_NO
              2 - MODE_NIGHT_YES
     -->
-    <integer name="config_defaultNightMode">1</integer>
+    <integer name="config_defaultNightMode">2</integer>
 
     <!-- Boolean indicating whether the HWC setColorTransform function can be performed efficiently
          in hardware. -->
