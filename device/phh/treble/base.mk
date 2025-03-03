@@ -42,7 +42,7 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
 	ro.adb.secure=0 \
 	ro.logd.auditd=true \
 	ro.logd.kernel=true \
-	ro.bootanim.set_orientation_0=ORIENTATION_90 \
+#	ro.bootanim.set_orientation_0=ORIENTATION_90 \
 
 #Huawei HiSuite (also other OEM custom programs I guess) it's of no use in AOSP builds
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
