@@ -171,14 +171,7 @@ void convertToSensorEvent(const Event &src, sensors_event_t *dst) {
         case SensorType::MOTION_DETECT:
         case SensorType::HEART_BEAT:
         case SensorType::LOW_LATENCY_OFFBODY_DETECT: {
-            if (src.payload.getTag() == Event::EventPayload::pose6DOF) {
-                auto d = src.payload.get<Event::EventPayload::pose6DOF>();
-                auto dstr = ::android::internal::ToString(d);
-                // ALOGE("Received 6DOF for expected scalar %s", dstr.c_str());
-                dst->data[0] = d.values[0];
-            } else {
-                dst->data[0] = src.payload.get<Event::EventPayload::scalar>();
-            }
+            dst->data[0] = src.payload.get<Event::EventPayload::scalar>();
             break;
         }
 

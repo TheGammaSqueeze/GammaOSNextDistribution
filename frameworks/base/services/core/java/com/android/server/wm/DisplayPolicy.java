@@ -221,9 +221,6 @@ public class DisplayPolicy {
     private boolean mCanSystemBarsBeShownByUser;
     private boolean mNavButtonForcedVisible;
 
-    private vendor.mediatek.hardware.mtkpower.V1_1.IMtkPerf mMtkPerf;
-    private vendor.mediatek.hardware.mtkpower.V1_0.IMtkPower mOldMtkPerf;
-
     StatusBarManagerInternal getStatusBarManagerInternal() {
         synchronized (mServiceAcquireLock) {
             if (mStatusBarManagerInternal == null) {
@@ -476,20 +473,6 @@ public class DisplayPolicy {
             mScreenOnEarly = true;
             mScreenOnFully = true;
         }
-        try {
-            mMtkPerf = vendor.mediatek.hardware.mtkpower.V1_1.IMtkPerf.getService();
-        } catch(Throwable t) {
-            android.util.Log.d("PHH-Power", "Retrieving mtkpower 1.0", t);
-            mMtkPerf = null;
-        }
-
-        try {
-            mOldMtkPerf = vendor.mediatek.hardware.mtkpower.V1_0.IMtkPower.getService();
-        } catch(Throwable t) {
-            android.util.Log.d("PHH-Power", "Retrieving mtkpower 1.0", t);
-            mOldMtkPerf = null;
-        }
-
 
         final Looper looper = UiThread.getHandler().getLooper();
         mHandler = new PolicyHandler(looper);
@@ -569,17 +552,6 @@ public class DisplayPolicy {
                             mService.mPowerManagerInternal.setPowerBoost(
                                     Boost.INTERACTION, duration);
                         }
-                        if(mOldMtkPerf != null) {
-                            try {
-                                android.util.Log.d("PHH-Power", "mtk1 fling power hint");
-                                int hint = 36; // MTKPOWER_HINT_APP_TOUCH
-                                if("rotate".equals(SystemProperties.get("persist.sys.phh.touch_hint")))
-                                        hint = 35; // MTKPOWER_HINT_APP_ROTATE
-                                mOldMtkPerf.mtkPowerHint(hint, duration);
-                            } catch(Throwable t) {
-                                android.util.Log.d("PHH-Power", "Failed sending touch power hint", t);
-                            }
-                        }
                     }
 
                     @Override
@@ -597,28 +569,6 @@ public class DisplayPolicy {
                         final WindowOrientationListener listener = getOrientationListener();
                         if (listener != null) {
                             listener.onTouchStart();
-                        }
-                        if(mMtkPerf != null) {
-                            try {
-                                android.util.Log.d("PHH-Power", "mtk power hint");
-                                int hint = 25; //MTKPOWER_HINT_APP_TOUCH
-                                if("rotate".equals(SystemProperties.get("persist.sys.phh.touch_hint")))
-                                        hint = 24; // MTKPOWER_HINT_APP_ROTATE
-                                mMtkPerf.perfCusLockHint(hint, 1000);
-                            } catch(Throwable t) {
-                                android.util.Log.d("PHH-Power", "Failed sending touch power hint", t);
-                            }
-                        }
-                        if(mOldMtkPerf != null) {
-                            try {
-                                android.util.Log.d("PHH-Power", "mtk1 power hint");
-                                int hint = 36; // MTKPOWER_HINT_APP_TOUCH
-                                if("rotate".equals(SystemProperties.get("persist.sys.phh.touch_hint")))
-                                        hint = 35; // MTKPOWER_HINT_APP_ROTATE
-                                mOldMtkPerf.mtkPowerHint(hint, 1000);
-                            } catch(Throwable t) {
-                                android.util.Log.d("PHH-Power", "Failed sending touch power hint", t);
-                            }
                         }
                     }
 

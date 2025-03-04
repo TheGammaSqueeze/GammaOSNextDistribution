@@ -2003,67 +2003,81 @@ public class DisplayRotation {
         return mService.mH;
     }
 
-    private class OrientationListener extends WindowOrientationListener implements Runnable {
-        transient boolean mEnabled;
+	private class OrientationListener extends WindowOrientationListener implements Runnable {
+		transient boolean mEnabled;
 
-        OrientationListener(Context context, Handler handler,
-                @Surface.Rotation int defaultRotation) {
-            super(context, handler, defaultRotation);
-        }
+		OrientationListener(Context context, Handler handler, @Surface.Rotation int defaultRotation) {
+			super(context, handler, defaultRotation);
+		}
 
-        @Override
-        public boolean isKeyguardShowingAndNotOccluded() {
-            return mService.isKeyguardShowingAndNotOccluded();
-        }
+		@Override
+		public boolean isKeyguardShowingAndNotOccluded() {
+			return mService.isKeyguardShowingAndNotOccluded();
+		}
 
-        @Override
-        public boolean isRotationResolverEnabled() {
-            return mAllowRotationResolver
-                    && mUserRotationMode == WindowManagerPolicy.USER_ROTATION_FREE
-                    && mCameraRotationMode == CAMERA_ROTATION_ENABLED
-                    && !mService.mPowerManager.isPowerSaveMode();
-        }
+		@Override
+		public boolean isRotationResolverEnabled() {
+			return mAllowRotationResolver
+					&& mUserRotationMode == WindowManagerPolicy.USER_ROTATION_FREE
+					&& mCameraRotationMode == CAMERA_ROTATION_ENABLED
+					&& !mService.mPowerManager.isPowerSaveMode();
+		}
 
+		@Override
+		public void onProposedRotationChanged(@Surface.Rotation int rotation) {
+			// Read the sensor mounting orientation property.
+			// The property "ro.sensors.accelerometer_orientation" is expected to be one of:
+			// "ORIENTATION_0", "ORIENTATION_90", "ORIENTATION_180", or "ORIENTATION_270".
+			String sensorOrientProp = SystemProperties.get("ro.sensors.accelerometer_orientation", "ORIENTATION_0");
+			int sensorOffset = 0;
+			if ("ORIENTATION_90".equals(sensorOrientProp)) {
+				sensorOffset = Surface.ROTATION_90; // typically 1
+			} else if ("ORIENTATION_180".equals(sensorOrientProp)) {
+				sensorOffset = Surface.ROTATION_180; // typically 2
+			} else if ("ORIENTATION_270".equals(sensorOrientProp)) {
+				sensorOffset = Surface.ROTATION_270; // typically 3
+			}
+			// Adjust the proposed rotation by subtracting the sensor offset modulo 4.
+			int adjustedRotation = (rotation - sensorOffset) % 4;
 
-        @Override
-        public void onProposedRotationChanged(@Surface.Rotation int rotation) {
-            ProtoLog.v(WM_DEBUG_ORIENTATION, "onProposedRotationChanged, rotation=%d", rotation);
-            // Send interaction power boost to improve redraw performance.
-            mService.mPowerManagerInternal.setPowerBoost(Boost.INTERACTION, 0);
-            if (isRotationChoiceAllowed(rotation)) {
-                mRotationChoiceShownToUserForConfirmation = rotation;
-                final boolean isValid = isValidRotationChoice(rotation);
-                sendProposedRotationChangeToStatusBarInternal(rotation, isValid);
-            } else {
-                mRotationChoiceShownToUserForConfirmation = ROTATION_UNDEFINED;
-                mService.updateRotation(false /* alwaysSendConfiguration */,
-                        false /* forceRelayout */);
-            }
-        }
+			ProtoLog.v(WM_DEBUG_ORIENTATION,
+					"onProposedRotationChanged, raw rotation=%d, adjusted rotation=%d", rotation, adjustedRotation);
+			// Send an interaction power boost to improve redraw performance.
+			mService.mPowerManagerInternal.setPowerBoost(Boost.INTERACTION, 0);
+			if (isRotationChoiceAllowed(adjustedRotation)) {
+				mRotationChoiceShownToUserForConfirmation = adjustedRotation;
+				final boolean isValid = isValidRotationChoice(adjustedRotation);
+				sendProposedRotationChangeToStatusBarInternal(adjustedRotation, isValid);
+			} else {
+				mRotationChoiceShownToUserForConfirmation = ROTATION_UNDEFINED;
+				mService.updateRotation(false /* alwaysSendConfiguration */,
+						false /* forceRelayout */);
+			}
+		}
 
-        @Override
-        public void enable() {
-            mEnabled = true;
-            getHandler().post(this);
-            ProtoLog.v(WM_DEBUG_ORIENTATION, "Enabling listeners");
-        }
+		@Override
+		public void enable() {
+			mEnabled = true;
+			getHandler().post(this);
+			ProtoLog.v(WM_DEBUG_ORIENTATION, "Enabling listeners");
+		}
 
-        @Override
-        public void disable() {
-            mEnabled = false;
-            getHandler().post(this);
-            ProtoLog.v(WM_DEBUG_ORIENTATION, "Disabling listeners");
-        }
+		@Override
+		public void disable() {
+			mEnabled = false;
+			getHandler().post(this);
+			ProtoLog.v(WM_DEBUG_ORIENTATION, "Disabling listeners");
+		}
 
-        @Override
-        public void run() {
-            if (mEnabled) {
-                super.enable();
-            } else {
-                super.disable();
-            }
-        }
-    }
+		@Override
+		public void run() {
+			if (mEnabled) {
+				super.enable();
+			} else {
+				super.disable();
+			}
+		}
+	}
 
     private class SettingsObserver extends ContentObserver {
         SettingsObserver(Handler handler) {

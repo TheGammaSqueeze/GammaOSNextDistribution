@@ -17,9 +17,9 @@
 #include <stdint.h>
 #include <math.h>
 #include <sys/types.h>
+#include <cutils/properties.h>    // Needed for property_get
 
 #include <utils/Errors.h>
-
 #include <hardware/sensors.h>
 
 #include "OrientationSensor.h"
@@ -28,6 +28,17 @@
 
 namespace android {
 // ---------------------------------------------------------------------------
+
+// Helper function to construct a 3x3 rotation matrix corresponding to a rotation
+// about the Z–axis by sensorRot degrees.
+static mat33_t getRotationMatrixForSensorOrientation(int sensorRot) {
+    mat33_t rot;
+    float rad = sensorRot * M_PI / 180.0f;
+    rot[0][0] = cosf(rad);  rot[0][1] = -sinf(rad);  rot[0][2] = 0;
+    rot[1][0] = sinf(rad);  rot[1][1] = cosf(rad);   rot[1][2] = 0;
+    rot[2][0] = 0;          rot[2][1] = 0;           rot[2][2] = 1;
+    return rot;
+}
 
 OrientationSensor::OrientationSensor() {
     const sensor_t sensor = {
@@ -49,9 +60,20 @@ bool OrientationSensor::process(sensors_event_t* outEvent,
 {
     if (event.type == SENSOR_TYPE_ACCELEROMETER) {
         if (mSensorFusion.hasEstimate()) {
-            vec3_t g;
+            // Read the sensor–mount orientation property.
+            char prop[PROPERTY_VALUE_MAX];
+            property_get("ro.sensors.accelerometer_orientation", prop, "0");
+            int sensorRot = atoi(prop);
+
             const float rad2deg = 180 / M_PI;
-            const mat33_t R(mSensorFusion.getRotationMatrix());
+            // Get the rotation matrix from the sensor fusion.
+            const mat33_t fusionR(mSensorFusion.getRotationMatrix());
+            // Compute the fixed rotation from the property.
+            const mat33_t sensorRotMatrix = getRotationMatrixForSensorOrientation(sensorRot);
+            // Combine them so that the sensor fusion output is rotated by sensorRot degrees.
+            mat33_t R = sensorRotMatrix * fusionR; // assumes operator* is defined for mat33_t
+
+            vec3_t g;
             g[0] = atan2f(-R[1][0], R[0][0])    * rad2deg;
             g[1] = atan2f(-R[2][1], R[2][2])    * rad2deg;
             g[2] = asinf ( R[2][0])             * rad2deg;
@@ -81,4 +103,3 @@ status_t OrientationSensor::setDelay(void* ident, int /*handle*/, int64_t ns) {
 
 // ---------------------------------------------------------------------------
 }; // namespace android
-

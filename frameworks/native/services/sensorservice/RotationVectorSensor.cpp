@@ -17,15 +17,25 @@
 #include <stdint.h>
 #include <math.h>
 #include <sys/types.h>
+#include <cutils/properties.h>    // Needed for property_get
 
 #include <utils/Errors.h>
-
 #include <hardware/sensors.h>
 
 #include "RotationVectorSensor.h"
 
 namespace android {
 // ---------------------------------------------------------------------------
+
+// Helper function to multiply two quaternions.
+static vec4_t multiply_quaternions(const vec4_t& q1, const vec4_t& q2) {
+    vec4_t result;
+    result.x = q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y;
+    result.y = q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x;
+    result.z = q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w;
+    result.w = q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z;
+    return result;
+}
 
 RotationVectorSensor::RotationVectorSensor(int mode) :
       mMode(mode) {
@@ -44,11 +54,34 @@ RotationVectorSensor::RotationVectorSensor(int mode) :
 }
 
 bool RotationVectorSensor::process(sensors_event_t* outEvent,
-        const sensors_event_t& event)
+                                   const sensors_event_t& event)
 {
     if (event.type == SENSOR_TYPE_ACCELEROMETER) {
         if (mSensorFusion.hasEstimate(mMode)) {
-            const vec4_t q(mSensorFusion.getAttitude(mMode));
+            // Read the sensor–mount orientation property.
+            char prop[PROPERTY_VALUE_MAX];
+            property_get("ro.sensors.accelerometer_orientation", prop, "0");
+            int sensorRot = atoi(prop);
+
+            // Get the quaternion from sensor fusion.
+            vec4_t q(mSensorFusion.getAttitude(mMode));
+
+            // If the sensor is rotated, adjust the quaternion by applying a rotation about Z.
+            if (sensorRot != 0) {
+                float halfRad = (sensorRot * M_PI / 180.0f) / 2.0f;
+
+                // The quaternion representing a rotation about the Z-axis:
+                // [ x, y, z, w ] = [ cos(halfRad), 0.0, 0.0, sin(halfRad) ]
+                // (or whichever ordering your code requires—be consistent with multiply_quaternions).
+                vec4_t rotQ;
+                rotQ.x = cosf(halfRad);
+                rotQ.y = 0.0f;
+                rotQ.z = 0.0f;
+                rotQ.w = sinf(halfRad);
+
+                q = multiply_quaternions(rotQ, q);
+            }
+
             *outEvent = event;
             outEvent->data[0] = q.x;
             outEvent->data[1] = q.y;
@@ -157,4 +190,3 @@ status_t GyroDriftSensor::setDelay(void* ident, int /*handle*/, int64_t ns) {
 
 // ---------------------------------------------------------------------------
 }; // namespace android
-

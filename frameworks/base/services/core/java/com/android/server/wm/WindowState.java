@@ -3296,10 +3296,8 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
             return false;
         }
         if (doAnimation) {
-            // If a hide animation is applied, then let onAnimationFinished
-            // -> checkPolicyVisibilityChange hide the window. Otherwise make doAnimation false
-            // to commit invisible immediately.
-            if (!mWinAnimator.applyAnimationLocked(TRANSIT_EXIT, false /* isEntrance */)) {
+            mWinAnimator.applyAnimationLocked(TRANSIT_EXIT, false);
+            if (!isAnimating(TRANSITION | PARENTS)) {
                 doAnimation = false;
             }
         }

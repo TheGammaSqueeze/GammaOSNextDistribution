@@ -799,6 +799,12 @@
       "group": "WM_DEBUG_TASKS",
       "at": "com\/android\/server\/wm\/RootWindowContainer.java"
     },
+    "-1375769007": {
+      "message": "onProposedRotationChanged, raw rotation=%d, adjusted rotation=%d",
+      "level": "VERBOSE",
+      "group": "WM_DEBUG_ORIENTATION",
+      "at": "com\/android\/server\/wm\/DisplayRotation.java"
+    },
     "-1373875178": {
       "message": "Going ahead with updating recording for display %d to new bounds %s and\/or orientation %d.",
       "level": "VERBOSE",
@@ -4452,12 +4458,6 @@
       "level": "INFO",
       "group": "WM_DEBUG_IME",
       "at": "com\/android\/server\/wm\/DisplayContent.java"
-    },
-    "2128917433": {
-      "message": "onProposedRotationChanged, rotation=%d",
-      "level": "VERBOSE",
-      "group": "WM_DEBUG_ORIENTATION",
-      "at": "com\/android\/server\/wm\/DisplayRotation.java"
     }
   },
   "groups": {
