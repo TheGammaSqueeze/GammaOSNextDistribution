@@ -42,10 +42,10 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
 	ro.adb.secure=0 \
 	ro.logd.auditd=true \
 	ro.logd.kernel=true \
-	ro.input_flinger.primary_touch_orientation=ORIENTATION_90 \
-        ro.sensors.accelerometer_orientation=ORIENTATION_90 \
+#	ro.input_flinger.primary_touch_orientation=ORIENTATION_90 \
+#       ro.sensors.accelerometer_orientation=ORIENTATION_90 \
 
-PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.primary_display_orientation=ORIENTATION_90 \
+#PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.primary_display_orientation=ORIENTATION_90 \
 
 #Huawei HiSuite (also other OEM custom programs I guess) it's of no use in AOSP builds
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \

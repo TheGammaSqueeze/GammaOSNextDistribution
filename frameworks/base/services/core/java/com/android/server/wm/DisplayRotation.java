@@ -2005,9 +2005,17 @@ public class DisplayRotation {
 
 	private class OrientationListener extends WindowOrientationListener implements Runnable {
 		transient boolean mEnabled;
+		// Store the adjusted rotation so that getProposedRotation() returns the corrected value.
+		private int mAdjustedRotation = ROTATION_UNDEFINED;
 
 		OrientationListener(Context context, Handler handler, @Surface.Rotation int defaultRotation) {
 			super(context, handler, defaultRotation);
+		}
+
+		// Override getProposedRotation() so that auto-rotation uses our corrected value.
+		@Override
+		public int getProposedRotation() {
+			return mAdjustedRotation;
 		}
 
 		@Override
@@ -2026,8 +2034,6 @@ public class DisplayRotation {
 		@Override
 		public void onProposedRotationChanged(@Surface.Rotation int rotation) {
 			// Read the sensor mounting orientation property.
-			// The property "ro.sensors.accelerometer_orientation" is expected to be one of:
-			// "ORIENTATION_0", "ORIENTATION_90", "ORIENTATION_180", or "ORIENTATION_270".
 			String sensorOrientProp = SystemProperties.get("ro.sensors.accelerometer_orientation", "ORIENTATION_0");
 			int sensorOffset = 0;
 			if ("ORIENTATION_90".equals(sensorOrientProp)) {
@@ -2037,12 +2043,12 @@ public class DisplayRotation {
 			} else if ("ORIENTATION_270".equals(sensorOrientProp)) {
 				sensorOffset = Surface.ROTATION_270; // typically 3
 			}
-			// Adjust the proposed rotation by subtracting the sensor offset modulo 4.
-			int adjustedRotation = (rotation - sensorOffset) % 4;
+			// Instead of adding the offset (which gave an inverted effect), we subtract it.
+			int adjustedRotation = (rotation - sensorOffset + 4) % 4;
+			mAdjustedRotation = adjustedRotation;
 
 			ProtoLog.v(WM_DEBUG_ORIENTATION,
 					"onProposedRotationChanged, raw rotation=%d, adjusted rotation=%d", rotation, adjustedRotation);
-			// Send an interaction power boost to improve redraw performance.
 			mService.mPowerManagerInternal.setPowerBoost(Boost.INTERACTION, 0);
 			if (isRotationChoiceAllowed(adjustedRotation)) {
 				mRotationChoiceShownToUserForConfirmation = adjustedRotation;
