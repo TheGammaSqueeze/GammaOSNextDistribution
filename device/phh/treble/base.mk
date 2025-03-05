@@ -42,10 +42,12 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
 	ro.adb.secure=0 \
 	ro.logd.auditd=true \
 	ro.logd.kernel=true \
-#	ro.input_flinger.primary_touch_orientation=ORIENTATION_90 \
-#       ro.sensors.accelerometer_orientation=ORIENTATION_90 \
+	ro.input_flinger.primary_touch_orientation=ORIENTATION_90 \
+        ro.sensors.accelerometer_orientation=ORIENTATION_90 \
+        ro.sensors.gyroscope_orientation=ORIENTATION_90 \
+        ro.sensors.magnetometer_orientation=ORIENTATION_90 \
 
-#PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.primary_display_orientation=ORIENTATION_90 \
+PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.primary_display_orientation=ORIENTATION_90 \
 
 #Huawei HiSuite (also other OEM custom programs I guess) it's of no use in AOSP builds
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
@@ -121,6 +123,34 @@ PRODUCT_PACKAGES += \
 
 PRODUCT_COPY_FILES += \
 	device/phh/treble/interfaces.xml:system/etc/permissions/interfaces.xml
+
+# GammaOS Customizations
+PRODUCT_COPY_FILES += \
+    gammaos/utils/xz:system/bin/xz \
+    gammaos/customization.sh:system/bin/customization.sh \
+    gammaos/magisk/magisk.apk:system/etc/magisk.apk \
+    gammaos/magisk/magisk.tar.gz:system/etc/magisk.tar.gz \
+    gammaos/retroarch/RetroArch_aarch64.apk:system/etc/RetroArch_aarch64.apk \
+    gammaos/retroarch/retroarch.tar.xz:system/etc/retroarch.tar.xz \
+    gammaos/retroarch/retroarch64sdcard1-arc.tar.gz:system/etc/retroarch64sdcard1-arc.tar.gz \
+    gammaos/retroarch/roms.tar.xz:system/etc/roms.tar.xz \
+    gammaos/setup.sh:system/bin/setup.sh \
+    gammaos/launcher/MiXplorer_v6.64.3-API29_B23090720.apk:system/etc/MiXplorer_v6.64.3-API29_B23090720.apk \
+    gammaos/launcher/AuroraStore_4.6.2.apk:system/etc/AuroraStore_4.6.2.apk \
+    gammaos/launcher/aurorastore.tar.gz:system/etc/aurorastore.tar.gz \
+    gammaos/toast/gammaos-displayloading.apk:system/etc/gammaos-displayloading.apk \
+    gammaos/daijisho/daijisho_408.tar.gz:system/etc/daijisho_408.tar.gz \
+    gammaos/daijisho/daijisho.tar.xz:system/etc/daijisho.tar.xz \
+    gammaos/toast/Toast.apk:system/etc/Toast.apk \
+    gammaos/emulators/drastic.tar.gz:system/etc/drastic.tar.gz \
+    gammaos/emulators/drastic_r2.6.0.4a.apk:system/etc/drastic_r2.6.0.4a.apk \
+    gammaos/emulators/mupen64plusae.tar.gz:system/etc/mupen64plusae.tar.gz \
+    gammaos/emulators/mupen64plusae_3.0.335.apk:system/etc/mupen64plusae_3.0.335.apk \
+    gammaos/emulators/ppsspp.tar.xz:system/etc/ppsspp.tar.xz \
+    gammaos/emulators/ppsspp_1.18.1.apk:system/etc/ppsspp_1.18.1.apk \
+    gammaos/emulators/flycast-release.apk:system/etc/flycast-release.apk \
+    gammaos/emulators/flycast.tar.xz:system/etc/flycast.tar.xz \
+    gammaos/launcher/gboard.tar.gz:system/etc/gboard.tar.gz
 
 PRODUCT_COPY_FILES += \
 	device/phh/treble/files/samsung-gpio_keys.kl:system/phh/samsung-gpio_keys.kl \

@@ -350,3 +350,4 @@ vendor/gapps/x86/proprietary/product/priv-app/Phonesky/Phonesky.apk filter=lfs d
 vendor/gapps/x86/proprietary/product/priv-app/GmsCore/GmsCore.apk filter=lfs diff=lfs merge=lfs -text
 vendor/gapps/x86/proprietary/product/priv-app/Velvet/Velvet.apk filter=lfs diff=lfs merge=lfs -text
 kernel/prebuilts/5.10/arm64/kernel-5.10-allsyms filter=lfs diff=lfs merge=lfs -text
+gammaos/** filter=lfs diff=lfs merge=lfs -text
