@@ -24,7 +24,7 @@
         android:id="@+id/headingTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Configuring GammaOS Core..."
+        android:text="Configuring GammaOS Next..."
         android:gravity="center_horizontal"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textColor="@android:color/white"

@@ -47,7 +47,8 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
         ro.sensors.gyroscope_orientation=ORIENTATION_90 \
         ro.sensors.magnetometer_orientation=ORIENTATION_90 \
 
-PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.primary_display_orientation=ORIENTATION_90 \
+PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.surface_flinger.primary_display_orientation=ORIENTATION_90
+PRODUCT_PROPERTY_OVERRIDES += ro.surface_flinger.primary_display_orientation=ORIENTATION_90
 
 #Huawei HiSuite (also other OEM custom programs I guess) it's of no use in AOSP builds
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \

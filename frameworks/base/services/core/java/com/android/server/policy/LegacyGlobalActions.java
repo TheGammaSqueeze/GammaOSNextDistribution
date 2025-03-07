@@ -26,6 +26,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.UserInfo;
+import android.content.pm.ApplicationInfo;
 import android.database.ContentObserver;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -53,6 +54,11 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.WindowManagerGlobal;
 import android.widget.AdapterView;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RoundRectShape;
+import android.graphics.Paint;
 
 import com.android.internal.R;
 import com.android.internal.app.AlertController;
@@ -70,14 +76,21 @@ import com.android.server.policy.WindowManagerPolicy.WindowManagerFuncs;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 import android.app.AlertDialog;
 import android.os.Looper;
+import android.os.Handler;
+import android.os.SystemProperties;
 import android.app.Activity;
 import android.widget.Toast;
 import android.os.BatteryManager;
 import android.widget.TextView;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.os.Build;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.WindowManager.LayoutParams;
 
 
 /**
@@ -128,6 +141,13 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
     private final EmergencyAffordanceManager mEmergencyAffordanceManager;
 
     private View headerView; // Member variable to hold the header view
+
+    private Handler mMemoryHandler = new Handler(Looper.getMainLooper());
+    private Runnable mMemoryUpdateRunnable;
+    private static final int MEMORY_UPDATE_INTERVAL = 1000; // 1 second
+
+    private HashMap<Integer, Long> prevIdleTimes = new HashMap<>();
+    private HashMap<Integer, Long> prevTotalTimes = new HashMap<>();
 
     /**
      * @param context everything needs a context :(
@@ -185,6 +205,7 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
             mHandler.sendEmptyMessage(MESSAGE_SHOW);
         } else {
             handleShow();
+                        updateMemoryAndCpuUsage();  // Ensure memory update starts when showing the dialog
         }
     }
 
@@ -218,6 +239,9 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
                 mDialog.show();
                 mDialog.getWindow().getDecorView().setSystemUiVisibility(
                         View.STATUS_BAR_DISABLE_EXPAND);
+
+        // Ensure memory update starts when dialog is shown
+            updateMemoryAndCpuUsage();
             }
         }
     }
@@ -226,151 +250,189 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
      * Create the global actions dialog.
      * @return A new dialog.
      */
-    private ActionsDialog createDialog() {
+private ActionsDialog createDialog() {
 
-        LayoutInflater inflater = LayoutInflater.from(mContext);
-        headerView = inflater.inflate(R.layout.header_battery_status, null, false);
-        updateBatteryStatus(); // Initial update
+    LayoutInflater inflater = LayoutInflater.from(mContext);
+    headerView = inflater.inflate(R.layout.header_battery_status, null, false);
+    updateBatteryStatus(); // Initial update
+        updateMemoryAndCpuUsage();   // Start memory update
 
-        // Simple toggle style if there's no vibrator, otherwise use a tri-state
-        if (!mHasVibrator) {
-            mSilentModeAction = new SilentModeToggleAction();
-        } else {
-            mSilentModeAction = new SilentModeTriStateAction(mContext, mAudioManager, mHandler);
-        }
-        mAirplaneModeOn = new ToggleAction(
-                R.drawable.ic_lock_airplane_mode,
-                R.drawable.ic_lock_airplane_mode_off,
-                R.string.global_actions_toggle_airplane_mode,
-                R.string.global_actions_airplane_mode_on_status,
-                R.string.global_actions_airplane_mode_off_status) {
-
-            @Override
-            public void onToggle(boolean on) {
-                if (mHasTelephony && TelephonyProperties.in_ecm_mode().orElse(false)) {
-                    mIsWaitingForEcmExit = true;
-                    // Launch ECM exit dialog
-                    Intent ecmDialogIntent =
-                            new Intent(TelephonyManager.ACTION_SHOW_NOTICE_ECM_BLOCK_OTHERS, null);
-                    ecmDialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    mContext.startActivity(ecmDialogIntent);
-                } else {
-                    changeAirplaneModeSystemSetting(on);
-                }
-            }
-
-            @Override
-            protected void changeStateFromPress(boolean buttonOn) {
-                if (!mHasTelephony) return;
-
-                // In ECM mode airplane state cannot be changed
-                if (!TelephonyProperties.in_ecm_mode().orElse(false)) {
-                    mState = buttonOn ? State.TurningOn : State.TurningOff;
-                    mAirplaneState = mState;
-                }
-            }
-
-            @Override
-            public boolean showDuringKeyguard() {
-                return true;
-            }
-
-            @Override
-            public boolean showBeforeProvisioning() {
-                return false;
-            }
-        };
-        onAirplaneModeChanged();
-
-        mItems = new ArrayList<Action>();
-        String[] defaultActions = mContext.getResources().getStringArray(
-                com.android.internal.R.array.config_globalActionsList);
-
-        ArraySet<String> addedKeys = new ArraySet<String>();
-        for (int i = 0; i < defaultActions.length; i++) {
-            String actionKey = defaultActions[i];
-            if (addedKeys.contains(actionKey)) {
-                // If we already have added this, don't add it again.
-                continue;
-            }
-            if (GLOBAL_ACTION_KEY_POWER.equals(actionKey)) {
-                mItems.add(new PowerAction(mContext, mWindowManagerFuncs));
-            } else if (GLOBAL_ACTION_KEY_AIRPLANE.equals(actionKey)) {
-                mItems.add(mAirplaneModeOn);
-            } else if (GLOBAL_ACTION_KEY_BUGREPORT.equals(actionKey)) {
-                if (Settings.Global.getInt(mContext.getContentResolver(),
-                        Settings.Global.BUGREPORT_IN_POWER_MENU, 0) != 0 && isCurrentUserOwner()) {
-                    mItems.add(new BugReportAction());
-                }
-            } else if (GLOBAL_ACTION_KEY_SILENT.equals(actionKey)) {
-                if (mShowSilentToggle) {
-                    mItems.add(mSilentModeAction);
-                }
-            } else if (GLOBAL_ACTION_KEY_USERS.equals(actionKey)) {
-                if (SystemProperties.getBoolean("fw.power_user_switcher", false)) {
-                    addUsersToMenu(mItems);
-                }
-            } else if (GLOBAL_ACTION_KEY_SETTINGS.equals(actionKey)) {
-                mItems.add(getSettingsAction());
-            } else if (GLOBAL_ACTION_KEY_LOCKDOWN.equals(actionKey)) {
-                mItems.add(getLockdownAction());
-            } else if (GLOBAL_ACTION_KEY_VOICEASSIST.equals(actionKey)) {
-                mItems.add(getVoiceAssistAction());
-            } else if (GLOBAL_ACTION_KEY_ASSIST.equals(actionKey)) {
-                mItems.add(getAssistAction());
-            } else if (GLOBAL_ACTION_KEY_RESTART.equals(actionKey)) {
-                mItems.add(new RestartAction(mContext, mWindowManagerFuncs));
-            } else {
-                Log.e(TAG, "Invalid global action key " + actionKey);
-            }
-            // Add here so we don't add more than one.
-            addedKeys.add(actionKey);
-        }
-
-        if (mEmergencyAffordanceManager.needsEmergencyAffordance()) {
-            mItems.add(getEmergencyAction());
-        }
-
-	// GammaOS - Add our own shortcuts
-	mItems.add(getBrightnessOptionsAction());
-	mItems.add(getHomeAction());
-        mItems.add(getPerformanceOptionsAction());
-	mItems.add(getKillForegroundAppAction());
-
-        mAdapter = new ActionsAdapter(mContext, mItems,
-                () -> mDeviceProvisioned, () -> mKeyguardShowing);
-
-        AlertController.AlertParams params = new AlertController.AlertParams(mContext);
-        params.mAdapter = mAdapter;
-        params.mOnClickListener = this;
-        params.mForceInverseBackground = true;
-	params.mCustomTitleView = headerView; // Set custom header
-
-        ActionsDialog dialog = new ActionsDialog(mContext, params);
-        dialog.setCanceledOnTouchOutside(false); // Handled by the custom class.
-
-        dialog.getListView().setItemsCanFocus(true);
-        dialog.getListView().setLongClickable(true);
-        dialog.getListView().setOnItemLongClickListener(
-                new AdapterView.OnItemLongClickListener() {
-                    @Override
-                    public boolean onItemLongClick(AdapterView<?> parent, View view, int position,
-                            long id) {
-                        final Action action = mAdapter.getItem(position);
-                        if (action instanceof LongPressAction) {
-                            return ((LongPressAction) action).onLongPress();
-                        }
-                        return false;
-                    }
-        });
-        dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
-        // Don't acquire soft keyboard focus, to avoid destroying state when capturing bugreports
-        dialog.getWindow().setFlags(FLAG_ALT_FOCUSABLE_IM, FLAG_ALT_FOCUSABLE_IM);
-
-        dialog.setOnDismissListener(this);
-
-        return dialog;
+    // Simple toggle style if there's no vibrator, otherwise use a tri-state
+    if (!mHasVibrator) {
+        mSilentModeAction = new SilentModeToggleAction();
+    } else {
+        mSilentModeAction = new SilentModeTriStateAction(mContext, mAudioManager, mHandler);
     }
+    mAirplaneModeOn = new ToggleAction(
+            R.drawable.ic_lock_airplane_mode,
+            R.drawable.ic_lock_airplane_mode_off,
+            R.string.global_actions_toggle_airplane_mode,
+            R.string.global_actions_airplane_mode_on_status,
+            R.string.global_actions_airplane_mode_off_status) {
+
+        @Override
+        public void onToggle(boolean on) {
+            if (mHasTelephony && TelephonyProperties.in_ecm_mode().orElse(false)) {
+                mIsWaitingForEcmExit = true;
+                // Launch ECM exit dialog
+                Intent ecmDialogIntent =
+                        new Intent(TelephonyManager.ACTION_SHOW_NOTICE_ECM_BLOCK_OTHERS, null);
+                ecmDialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                mContext.startActivity(ecmDialogIntent);
+            } else {
+                changeAirplaneModeSystemSetting(on);
+            }
+        }
+
+        @Override
+        protected void changeStateFromPress(boolean buttonOn) {
+            if (!mHasTelephony) return;
+
+            // In ECM mode airplane state cannot be changed
+            if (!TelephonyProperties.in_ecm_mode().orElse(false)) {
+                mState = buttonOn ? State.TurningOn : State.TurningOff;
+                mAirplaneState = mState;
+            }
+        }
+
+        @Override
+        public boolean showDuringKeyguard() {
+            return true;
+        }
+
+        @Override
+        public boolean showBeforeProvisioning() {
+            return false;
+        }
+    };
+    onAirplaneModeChanged();
+
+    mItems = new ArrayList<Action>();
+    String[] defaultActions = mContext.getResources().getStringArray(
+            com.android.internal.R.array.config_globalActionsList);
+
+    ArraySet<String> addedKeys = new ArraySet<String>();
+    for (int i = 0; i < defaultActions.length; i++) {
+        String actionKey = defaultActions[i];
+        if (addedKeys.contains(actionKey)) {
+            // If we already have added this, don't add it again.
+            continue;
+        }
+        if (GLOBAL_ACTION_KEY_POWER.equals(actionKey)) {
+            mItems.add(new PowerAction(mContext, mWindowManagerFuncs));
+        } else if (GLOBAL_ACTION_KEY_AIRPLANE.equals(actionKey)) {
+            mItems.add(mAirplaneModeOn);
+        } else if (GLOBAL_ACTION_KEY_BUGREPORT.equals(actionKey)) {
+            if (Settings.Global.getInt(mContext.getContentResolver(),
+                    Settings.Global.BUGREPORT_IN_POWER_MENU, 0) != 0 && isCurrentUserOwner()) {
+                mItems.add(new BugReportAction());
+            }
+        } else if (GLOBAL_ACTION_KEY_SILENT.equals(actionKey)) {
+            if (mShowSilentToggle) {
+                mItems.add(mSilentModeAction);
+            }
+        } else if (GLOBAL_ACTION_KEY_USERS.equals(actionKey)) {
+            if (SystemProperties.getBoolean("fw.power_user_switcher", false)) {
+                addUsersToMenu(mItems);
+            }
+        } else if (GLOBAL_ACTION_KEY_VOICEASSIST.equals(actionKey)) {
+            mItems.add(getVoiceAssistAction());
+        } else if (GLOBAL_ACTION_KEY_ASSIST.equals(actionKey)) {
+            mItems.add(getAssistAction());
+        } else if (GLOBAL_ACTION_KEY_RESTART.equals(actionKey)) {
+            mItems.add(new RestartAction(mContext, mWindowManagerFuncs));
+        } else {
+            Log.e(TAG, "Invalid global action key " + actionKey);
+        }
+        // Add here so we don't add more than one.
+        addedKeys.add(actionKey);
+    }
+
+    if (mEmergencyAffordanceManager.needsEmergencyAffordance()) {
+        mItems.add(getEmergencyAction());
+    }
+
+    // GammaOS - Add our own shortcuts
+    mItems.add(getKillForegroundAppAction());
+    mItems.add(getSettingsAction());
+    mItems.add(getBrightnessOptionsAction());
+    mItems.add(getControllerOptionsAction());
+    mItems.add(getUSBOptionsAction());
+    mItems.add(getPerformanceOptionsAction());
+    mItems.add(getKillBackgroundAppsAction());
+    mItems.add(getKillAllAppsAction());
+    mItems.add(getHomeAction());
+
+    // Override ActionsAdapter's getView method to set text color to white
+    mAdapter = new ActionsAdapter(mContext, mItems,
+            () -> mDeviceProvisioned, () -> mKeyguardShowing) {
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            // Get the default view for the item
+            View view = super.getView(position, convertView, parent);
+
+            // Traverse view hierarchy to find the TextView
+            if (view instanceof ViewGroup) {
+                findAndSetTextColorWhite((ViewGroup) view);
+            }
+
+            return view;
+        }
+
+        private void findAndSetTextColorWhite(ViewGroup viewGroup) {
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                View child = viewGroup.getChildAt(i);
+                if (child instanceof TextView) {
+                    ((TextView) child).setTextColor(Color.WHITE); // Set text color to white
+                } else if (child instanceof ViewGroup) {
+                    findAndSetTextColorWhite((ViewGroup) child); // Recursively search for TextView
+                }
+            }
+        }
+    };
+
+    AlertController.AlertParams params = new AlertController.AlertParams(mContext);
+    params.mAdapter = mAdapter;
+    params.mOnClickListener = this;
+    params.mForceInverseBackground = true;
+    params.mCustomTitleView = headerView; // Set custom header
+
+    ActionsDialog dialog = new ActionsDialog(mContext, params);
+    dialog.setCanceledOnTouchOutside(false); // Handled by the custom class.
+
+    dialog.getListView().setItemsCanFocus(true);
+    dialog.getListView().setLongClickable(true);
+    dialog.getListView().setOnItemLongClickListener(
+            new AdapterView.OnItemLongClickListener() {
+                @Override
+                public boolean onItemLongClick(AdapterView<?> parent, View view, int position,
+                        long id) {
+                    final Action action = mAdapter.getItem(position);
+                    if (action instanceof LongPressAction) {
+                        return ((LongPressAction) action).onLongPress();
+                    }
+                    return false;
+                }
+    });
+    dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
+    // Don't acquire soft keyboard focus, to avoid destroying state when capturing bug reports
+    dialog.getWindow().setFlags(FLAG_ALT_FOCUSABLE_IM, FLAG_ALT_FOCUSABLE_IM);
+
+    // Define rounded corners
+    float[] outerRadii = new float[] {16, 16, 16, 16, 16, 16, 16, 16}; // Set corner radius
+    RoundRectShape roundedRect = new RoundRectShape(outerRadii, null, null);
+    ShapeDrawable shapeDrawable = new ShapeDrawable(roundedRect);
+    shapeDrawable.getPaint().setColor(Color.parseColor("#FA333333")); // Transparent black
+    shapeDrawable.getPaint().setStyle(Paint.Style.FILL);
+
+    // Apply the rounded background
+    dialog.getWindow().setBackgroundDrawable(shapeDrawable);
+
+    dialog.setOnDismissListener(this);
+
+    return dialog;
+}
 
     private class BugReportAction extends SinglePressAction implements LongPressAction {
 
@@ -466,8 +528,8 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
 
             @Override
             public void onPress() {
-    		Intent intent = new Intent(Intent.ACTION_MAIN);
-    		intent.addCategory(Intent.CATEGORY_HOME);
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_HOME);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 mContext.startActivity(intent);
             }
@@ -524,9 +586,86 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
         };
     }
 
+    private Action getControllerOptionsAction() {
+        return new SinglePressAction(R.drawable.ic_menu,
+                R.string.gammaos_controller_options) {
+
+            public void onPress() {
+                Intent intent = new Intent(mContext, ControllerOptionsActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+                // Dismiss the dialog completely before launching the new activity
+                if (mDialog != null && mDialog.isShowing()) {
+                    mDialog.dismiss();
+                    mDialog = null; // Clear the reference to help garbage collection
+                }
+
+                mContext.startActivity(intent);
+
+                // Check if mContext is an instance of Activity and then call finish()
+                if (mContext instanceof Activity) {
+                    ((Activity) mContext).finish();
+                }
+            }
+
+            public boolean onLongPress() {
+                return false;
+            }
+
+            @Override
+            public boolean showDuringKeyguard() {
+                return true;
+            }
+
+            @Override
+            public boolean showBeforeProvisioning() {
+                return true;
+            }
+
+        };
+    }
+
+    private Action getUSBOptionsAction() {
+        return new SinglePressAction(R.drawable.ic_usb_48dp,
+                R.string.gammaos_usb_options) {
+
+            public void onPress() {
+                Intent intent = new Intent(mContext, USBOptionsActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+                // Dismiss the dialog completely before launching the new activity
+                if (mDialog != null && mDialog.isShowing()) {
+                    mDialog.dismiss();
+                    mDialog = null; // Clear the reference to help garbage collection
+                }
+
+                mContext.startActivity(intent);
+
+                // Check if mContext is an instance of Activity and then call finish()
+                if (mContext instanceof Activity) {
+                    ((Activity) mContext).finish();
+                }
+            }
+
+            public boolean onLongPress() {
+                return false;
+            }
+
+            @Override
+            public boolean showDuringKeyguard() {
+                return true;
+            }
+
+            @Override
+            public boolean showBeforeProvisioning() {
+                return true;
+            }
+
+        };
+    }
 
     private Action getBrightnessOptionsAction() {
-        return new SinglePressAction(R.drawable.ic_menu, // Use an appropriate icon for brightness
+        return new SinglePressAction(com.android.internal.R.drawable.ic_menu, // Use an appropriate icon for brightness
                 R.string.gammaos_brightness_settings) { // Define this string in your resources
 
             public void onPress() {
@@ -569,27 +708,44 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
             @Override
             public void onPress() {
                 ActivityManager am = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
-                List<ActivityManager.RunningAppProcessInfo> appProcesses = am.getRunningAppProcesses();
-                if (appProcesses != null && !appProcesses.isEmpty()) {
-                    String foregroundProcess = appProcesses.get(0).processName;
+                List<ActivityManager.RunningTaskInfo> taskInfo = am.getRunningTasks(1); // Get the top (foreground) task
+
+                if (taskInfo != null && !taskInfo.isEmpty()) {
+                    String foregroundProcess = taskInfo.get(0).topActivity.getPackageName(); // Get the package name of the top activity
                     try {
                         am.forceStopPackage(foregroundProcess);
-                        Toast.makeText(mContext, "Foreground app killed: " + foregroundProcess, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, "Closed app: " + foregroundProcess, Toast.LENGTH_SHORT).show();
+
+                        // Set sys.mem_clear=1 and then reset to 0 after 1 second
+                        setMemoryClearProp();
+
                     } catch (Exception e) {
-                        Toast.makeText(mContext, "Failed to kill app due to: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(mContext, "Close app error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 } else {
                     Toast.makeText(mContext, "No foreground app found", Toast.LENGTH_SHORT).show();
                 }
             }
 
-            public boolean onLongPress() {
-                return false;
+            private void setMemoryClearProp() {
+                try {
+                    // Set sys.mem_clear to 1
+                    SystemProperties.set("sys.mem_clear", "1");
+                    Log.d(TAG, "sys.mem_clear set to 1");
+
+                    // Reset sys.mem_clear to 0 after 1 second
+                    mHandler.postDelayed(() -> {
+                        SystemProperties.set("sys.mem_clear", "0");
+                        Log.d(TAG, "sys.mem_clear reset to 0");
+                    }, 1000); // Delay of 1 second
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to set/reset sys.mem_clear", e);
+                }
             }
 
             @Override
             public boolean showDuringKeyguard() {
-               return true;
+                return true;
             }
 
             @Override
@@ -599,6 +755,111 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
         };
     }
 
+    private Action getKillBackgroundAppsAction() {
+        return new SinglePressAction(R.drawable.ic_menu, R.string.gammaos_kill_all_background_apps) {
+
+            @Override
+            public void onPress() {
+                ActivityManager am = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
+                PackageManager pm = mContext.getPackageManager();
+
+                // Get the foreground app
+                List<ActivityManager.RunningTaskInfo> taskInfo = am.getRunningTasks(1);
+                String foregroundProcess = null;
+                if (taskInfo != null && !taskInfo.isEmpty()) {
+                    foregroundProcess = taskInfo.get(0).topActivity.getPackageName(); // Get foreground app package name
+                }
+
+                List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = am.getRunningAppProcesses();
+
+                if (runningAppProcesses != null && !runningAppProcesses.isEmpty()) {
+                    for (ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
+                        String packageName = processInfo.processName;
+
+                        // Skip the foreground app and system apps
+                        try {
+                            ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
+
+                            if (!packageName.equals(foregroundProcess) && (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                                // Force stop the background app
+                                am.forceStopPackage(packageName);
+                            }
+                        } catch (PackageManager.NameNotFoundException e) {
+                            // Ignore any packages that cannot be found
+                        } catch (Exception e) {
+                            Toast.makeText(mContext, "Failed to kill app: " + packageName + " due to: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                    Toast.makeText(mContext, "All background apps have been killed", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(mContext, "No running background apps found", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            public boolean onLongPress() {
+                return false;
+            }
+
+            @Override
+            public boolean showDuringKeyguard() {
+                return true;
+            }
+
+            @Override
+            public boolean showBeforeProvisioning() {
+                return true;
+            }
+        };
+    }
+
+    private Action getKillAllAppsAction() {
+        return new SinglePressAction(R.drawable.ic_menu, R.string.gammaos_kill_all_apps) {
+
+            @Override
+            public void onPress() {
+                ActivityManager am = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
+                PackageManager pm = mContext.getPackageManager();
+                List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = am.getRunningAppProcesses();
+
+                if (runningAppProcesses != null && !runningAppProcesses.isEmpty()) {
+                    for (ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
+                        String packageName = processInfo.processName;
+
+                        try {
+                            ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
+
+                            // Skip system apps and the current package
+                            if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                                // Force stop the package
+                                am.forceStopPackage(packageName);
+                            }
+                        } catch (PackageManager.NameNotFoundException e) {
+                            // Ignore any packages that cannot be found
+                        } catch (Exception e) {
+                            Toast.makeText(mContext, "Failed to kill app: " + packageName + " due to: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                    Toast.makeText(mContext, "All apps have been killed", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(mContext, "No running apps found", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            public boolean onLongPress() {
+                return false;
+            }
+
+            @Override
+            public boolean showDuringKeyguard() {
+                return true;
+            }
+
+            @Override
+            public boolean showBeforeProvisioning() {
+                return true;
+            }
+        };
+    }
 
     private Action getEmergencyAction() {
         return new SinglePressAction(com.android.internal.R.drawable.emergency_icon,
@@ -763,27 +1024,32 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
         }
     }
 
-/** {@inheritDoc} */
-@Override
-public void onDismiss(DialogInterface dialog) {
-    if (mOnDismiss != null) {
-        mOnDismiss.run();
-    }
-    if (mShowSilentToggle) {
-        try {
-            mContext.unregisterReceiver(mRingerModeReceiver);
-        } catch (IllegalArgumentException ie) {
-            // This will catch the exception if the receiver was already unregistered or not registered.
-            Log.w(TAG, "Attempted to unregister the ringer mode receiver that was not registered", ie);
+        /** {@inheritDoc} */
+        @Override
+        public void onDismiss(DialogInterface dialog) {
+                if (mOnDismiss != null) {
+                        mOnDismiss.run();
+                }
+                if (mShowSilentToggle) {
+                        try {
+                                mContext.unregisterReceiver(mRingerModeReceiver);
+                        } catch (IllegalArgumentException ie) {
+                                // This will catch the exception if the receiver was already unregistered or not registered.
+                                Log.w(TAG, "Attempted to unregister the ringer mode receiver that was not registered", ie);
+                        }
+                }
+                try {
+                        mContext.unregisterReceiver(batteryInfoReceiver); // Unregister the battery info receiver
+                } catch (IllegalArgumentException ie) {
+                        // This will catch the exception if the receiver was already unregistered or not registered.
+                        Log.w(TAG, "Attempted to unregister the battery info receiver that was not registered", ie);
+                }
+
+                if (mMemoryHandler != null && mMemoryUpdateRunnable != null) {
+                        mMemoryHandler.removeCallbacks(mMemoryUpdateRunnable);
+                }
+
         }
-    }
-    try {
-        mContext.unregisterReceiver(batteryInfoReceiver); // Unregister the battery info receiver
-    } catch (IllegalArgumentException ie) {
-        // This will catch the exception if the receiver was already unregistered or not registered.
-        Log.w(TAG, "Attempted to unregister the battery info receiver that was not registered", ie);
-    }
-}
 
     /** {@inheritDoc} */
     @Override
@@ -1018,6 +1284,132 @@ public void onDismiss(DialogInterface dialog) {
         mContext.registerReceiver(batteryInfoReceiver, filter);
     }
 
+        private void updateMemoryAndCpuUsage() {
+                // Define the Runnable to update memory and CPU usage every second
+                mMemoryUpdateRunnable = new Runnable() {
+                        @Override
+                        public void run() {
+                                try {
+                                        // Get memory information from /proc/meminfo
+                                        int totalMem = extractMemoryValue("MemTotal:");
+                                        int freeMem = extractMemoryValue("MemFree:");
+                                        int buffers = extractMemoryValue("Buffers:");
+                                        int cached = extractMemoryValue("Cached:");
+                                        int sreclaimable = extractMemoryValue("SReclaimable:");
+                                        int shmem = extractMemoryValue("Shmem:");
+
+                                        int usedMemory = (totalMem - freeMem - buffers - (cached + sreclaimable - shmem)) / 1024; // in MB
+                                        int totalMemory = totalMem / 1024; // in MB
+                                        String memoryUsage = "MEM: " + usedMemory + "/" + totalMemory + " MB";
+
+                                        // Calculate average CPU utilization across all cores
+                                        float avgCpuUsage = getAverageCpuUsage();
+                                        String cpuUsageText = String.format("CPU: %.1f%%", avgCpuUsage);
+
+                                        // Update UI on the main thread
+                                        mHandler.post(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                        TextView memoryText = headerView.findViewById(R.id.memory_usage);
+                                                        TextView cpuText = headerView.findViewById(R.id.cpu_usage);
+
+                                                        if (memoryText != null) {
+                                                                memoryText.setText(memoryUsage);
+                                                        } else {
+                                                                Log.e(TAG, "Memory TextView not found");
+                                                        }
+
+                                                        if (cpuText != null) {
+                                                                cpuText.setText(cpuUsageText);
+                                                        } else {
+                                                                Log.e(TAG, "CPU TextView not found");
+                                                        }
+                                                }
+                                        });
+
+                                } catch (Exception e) {
+                                        Log.e(TAG, "Failed to update memory or CPU usage", e);
+                                }
+
+                                // Post the Runnable again for repeated execution
+                                mMemoryHandler.postDelayed(mMemoryUpdateRunnable, MEMORY_UPDATE_INTERVAL);
+                        }
+
+                                private float getAverageCpuUsage() {
+                                        try {
+                                                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader("/proc/stat"));
+                                                String line;
+                                                long totalIdleTime = 0;
+                                                long totalTotalTime = 0;
+                                                int coreCount = 0;
+
+                                                while ((line = reader.readLine()) != null) {
+                                                        if (line.startsWith("cpu")) {
+                                                                // Skip the first line (aggregated CPU usage), and focus on individual cores
+                                                                if (line.startsWith("cpu ")) {
+                                                                        continue;
+                                                                }
+
+                                                                String[] tokens = line.split("\\s+");
+                                                                if (tokens.length < 8) {
+                                                                        continue; // Invalid line format, skip it
+                                                                }
+
+                                                                long idleTime = Long.parseLong(tokens[4]); // Idle time
+                                                                long totalTime = 0;
+
+                                                                for (int i = 1; i < tokens.length; i++) {
+                                                                        totalTime += Long.parseLong(tokens[i]);
+                                                                }
+
+                                                                // Calculate differences from the previous values for each core
+                                                                long prevIdle = prevIdleTimes.getOrDefault(coreCount, 0L);
+                                                                long prevTotal = prevTotalTimes.getOrDefault(coreCount, 0L);
+
+                                                                long diffIdle = idleTime - prevIdle;
+                                                                long diffTotal = totalTime - prevTotal;
+
+                                                                prevIdleTimes.put(coreCount, idleTime);
+                                                                prevTotalTimes.put(coreCount, totalTime);
+
+                                                                totalIdleTime += diffIdle;
+                                                                totalTotalTime += diffTotal;
+                                                                coreCount++;
+                                                        }
+                                                }
+                                                reader.close();
+
+                                                if (coreCount > 0 && totalTotalTime > 0) {
+                                                        return 100.0f * (totalTotalTime - totalIdleTime) / totalTotalTime;
+                                                }
+
+                                        } catch (Exception e) {
+                                                Log.e(TAG, "Failed to read CPU info", e);
+                                        }
+
+                                        return 0.0f;
+                                }
+                        };
+                                // Start the memory and CPU updates
+                mMemoryHandler.post(mMemoryUpdateRunnable);
+        }
+
+        private int extractMemoryValue(String key) {
+                try {
+                        java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader("/proc/meminfo"));
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                                if (line.startsWith(key)) {
+                                        reader.close();
+                                        return Integer.parseInt(line.replaceAll("\\D+", ""));
+                                }
+                        }
+                        reader.close();
+                } catch (Exception e) {
+                        Log.e(TAG, "Failed to read memory info", e);
+                }
+                return 0;
+        }
 
     private BroadcastReceiver batteryInfoReceiver = new BroadcastReceiver() {
         @Override
@@ -1034,6 +1426,7 @@ public void onDismiss(DialogInterface dialog) {
                         TextView batteryText = headerView.findViewById(R.id.battery_percentage);
                         if (batteryText != null) {
                             batteryText.setText(batteryPct + "%");
+                            batteryText.setTextColor(Color.WHITE);
                         } else {
                             Log.e(TAG, "Battery TextView not found");
                         }
