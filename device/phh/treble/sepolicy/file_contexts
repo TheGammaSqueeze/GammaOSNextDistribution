@@ -6,6 +6,8 @@
 /system/bin/phh-on-data.sh u:object_r:phhsu_exec:s0
 /system/bin/asus-motor u:object_r:phhsu_exec:s0
 /system/bin/xiaomi-touch u:object_r:phhsu_exec:s0
+/system/bin/customization.sh u:object_r:phhsu_exec:s0
+/system/bin/setup.sh u:object_r:phhsu_exec:s0
 
 /bt_firmware(/.*)?      u:object_r:bt_firmware_file:s0
 
