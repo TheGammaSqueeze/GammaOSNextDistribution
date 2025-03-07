@@ -7170,14 +7170,6 @@
             android:exported="true">
         </provider>
 
-        <provider
-            android:name="com.android.server.tvproviderstub.StubTvProvider"
-            android:authorities="android.media.tv"
-            android:exported="false"
-            android:enabled="true"
-            android:permission="android.permission.MANAGE_TV_INPUTS">
-        </provider>
-
     </application>
 
 </manifest>
