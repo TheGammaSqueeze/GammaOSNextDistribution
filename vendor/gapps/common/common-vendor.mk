@@ -19,12 +19,8 @@ PRODUCT_COPY_FILES += \
     vendor/gapps/common/proprietary/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/permissions/privapp-permissions-google-system-ext.xml
 
 PRODUCT_PACKAGES += \
-    GoogleCalendarSyncAdapter \
-    GoogleContactsSyncAdapter \
     PrebuiltExchange3Google \
-    AndroidAutoStub \
     GooglePartnerSetup \
-    GoogleFeedback \
     GoogleServicesFramework \
     com.google.android.dialer.support
 

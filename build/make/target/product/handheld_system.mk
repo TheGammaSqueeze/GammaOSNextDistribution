@@ -33,7 +33,6 @@ $(call inherit-product-if-exists, frameworks/webview/chromium/chromium.mk)
 
 PRODUCT_PACKAGES += \
     BasicDreams \
-    BlockedNumberProvider \
     BluetoothMidiService \
     BookmarkProvider \
     BuiltInPrintService \
@@ -53,22 +52,16 @@ PRODUCT_PACKAGES += \
     ManagedProvisioning \
     MmsService \
     MtpService \
-    MusicFX \
-    NfcNci \
     PacProcessor \
-    PrintRecommendationService \
-    PrintSpooler \
     ProxyHandler \
     screenrecord \
     SecureElement \
     SharedStorageBackup \
-    SimAppDialog \
     Telecom \
     TelephonyProvider \
     TeleService \
     UserDictionaryProvider \
     VpnDialogs \
-    vr \
 
 
 PRODUCT_SYSTEM_SERVER_APPS += \

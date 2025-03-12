@@ -23,8 +23,6 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/media_product.mk)
 # /product packages
 PRODUCT_PACKAGES += \
     Browser2 \
-    Calendar \
-    Contacts \
     DeskClock \
     Gallery2 \
     Music \
@@ -34,11 +32,8 @@ PRODUCT_PACKAGES += \
     SettingsIntelligence \
     frameworks-base-overlays
 
-ifeq ($(LINEAGE_BUILD),)
 PRODUCT_PACKAGES += \
-    Camera2 \
     LatinIME
-endif
 
 PRODUCT_PACKAGES_DEBUG += \
     frameworks-base-overlays-debug

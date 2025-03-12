@@ -12,7 +12,6 @@ PRODUCT_PACKAGES += \
     Eleven \
     Etar \
     Profiles \
-    Recorder \
     Seedvault
 
 ifneq ($(PRODUCT_NO_CAMERA),true)
