@@ -222,7 +222,7 @@ public class LongScreenSettings extends SettingsPreferenceFragment
             mApplicationsState.ensureIcon(entry);
             holder.icon.setImageDrawable(entry.icon);
             holder.state.setTag(entry);
-            holder.state.setChecked(!(mLongScreen.shouldForceLongScreen(entry.info.packageName)));
+            holder.state.setChecked(mLongScreen.shouldForceLongScreen(entry.info.packageName));
             return holder.rootView;
         }
 

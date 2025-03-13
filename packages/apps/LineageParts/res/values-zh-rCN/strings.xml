@@ -449,9 +449,9 @@
     <string name="display_rotation_90_title">90 度</string>
     <string name="display_rotation_180_title">180 度</string>
     <string name="display_rotation_270_title">270 度</string>
-    <string name="inverse_long_screen_settings_title">禁用拉伸全屏</string>
-    <string name="inverse_long_screen_settings_summary">对选定的应用禁用拉伸全屏</string>
-    <string name="inverse_long_screen_settings_no_apps">无应用</string>
+    <string name="long_screen_settings_title">全屏应用</string>
+    <string name="long_screen_settings_summary">强制旧式应用程序使用全屏长宽比</string>
+    <string name="long_screen_settings_no_apps">无应用</string>
     <string name="charging_sounds_settings_title">充电提示音</string>
     <string name="charging_sounds_enable_title">启用充电提示音</string>
     <string name="charging_sounds_summary">连接或断开电源时发出声音</string>

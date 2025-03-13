@@ -75,8 +75,8 @@
           lineage:xmlRes="@xml/power_menu_settings" />
 
     <part android:key="long_screen_settings"
-          android:title="@string/inverse_long_screen_settings_title"
-          android:summary="@string/inverse_long_screen_settings_summary"
+          android:title="@string/long_screen_settings_title"
+          android:summary="@string/long_screen_settings_summary"
           android:fragment="org.lineageos.lineageparts.applications.LongScreenSettings"
           lineage:xmlRes="@xml/long_screen_prefs" />
 
