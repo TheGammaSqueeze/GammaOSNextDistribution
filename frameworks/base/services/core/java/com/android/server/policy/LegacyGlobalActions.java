@@ -208,6 +208,37 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
                         updateMemoryAndCpuUsage();  // Ensure memory update starts when showing the dialog
         }
     }
+	
+    /**
+     * Helper to enable immersive mode on the global actions dialog.
+     */
+    private void enableImmersiveModeForDialog(ActionsDialog dialog) {
+        if (dialog != null && dialog.getWindow() != null) {
+            final View decorView = dialog.getWindow().getDecorView();
+            decorView.setSystemUiVisibility(
+                  View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+            decorView.setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
+                @Override
+                public void onSystemUiVisibilityChange(int visibility) {
+                    // If the system bars become visible, reapply immersive mode.
+                    if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+                        decorView.setSystemUiVisibility(
+                              View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+                    }
+                }
+            });
+        }
+    }
 
     private void awakenIfNecessary() {
         if (mDreamManager != null) {
@@ -221,6 +252,9 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
         }
     }
 
+    /**
+     * Modified method to show the global actions dialog in immersive mode.
+     */
     private void handleShow() {
         awakenIfNecessary();
         mDialog = createDialog();
@@ -237,11 +271,10 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
                 attrs.setTitle("LegacyGlobalActions");
                 mDialog.getWindow().setAttributes(attrs);
                 mDialog.show();
-                mDialog.getWindow().getDecorView().setSystemUiVisibility(
-                        View.STATUS_BAR_DISABLE_EXPAND);
-
-        // Ensure memory update starts when dialog is shown
-            updateMemoryAndCpuUsage();
+                // Instead of disabling the status bar expansion, enable full immersive mode:
+                enableImmersiveModeForDialog(mDialog);
+                // Ensure memory update starts when dialog is shown.
+                updateMemoryAndCpuUsage();
             }
         }
     }
