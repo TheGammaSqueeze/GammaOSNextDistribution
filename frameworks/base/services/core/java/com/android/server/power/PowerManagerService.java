@@ -2254,6 +2254,7 @@ public final class PowerManagerService extends SystemService
             case WAKEFULNESS_ASLEEP:
                 traceMethodName = "reallyGoToSleep";
                 Slog.i(TAG, "Sleeping (uid " + uid + ")...");
+				SystemProperties.set("sys.screen.state", "off");
                 // TODO(b/215518989): Remove this once transactions are in place
                 if (currentWakefulness != WAKEFULNESS_DOZING) {
                     // in case we are going to sleep without dozing before
@@ -2270,6 +2271,7 @@ public final class PowerManagerService extends SystemService
                         + ", reason=" + PowerManager.wakeReasonToString(reason)
                         + ", details=" + details
                         + ")...");
+                SystemProperties.set("sys.screen.state", "on");
                 mLastGlobalWakeTime = eventTime;
                 mLastGlobalWakeReason = reason;
                 break;
@@ -2277,6 +2279,7 @@ public final class PowerManagerService extends SystemService
             case WAKEFULNESS_DREAMING:
                 traceMethodName = "nap";
                 Slog.i(TAG, "Nap time (uid " + uid + ")...");
+				SystemProperties.set("sys.screen.state", "off");
                 break;
 
             case WAKEFULNESS_DOZING:
@@ -2286,6 +2289,7 @@ public final class PowerManagerService extends SystemService
                         + ", activityTimeoutWM=" + mUserActivityTimeoutOverrideFromWindowManager
                         + ", maxDimRatio=" + mMaximumScreenDimRatioConfig
                         + ", maxDimDur=" + mMaximumScreenDimDurationConfig + ")...");
+				SystemProperties.set("sys.screen.state", "off");
                 mLastGlobalSleepTime = eventTime;
                 mLastGlobalSleepReason = reason;
                 mDozeStartInProgress = true;
