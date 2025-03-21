@@ -52,19 +52,6 @@
                 android:value="org.lineageos.lineageparts.PartsUpdater" />
         </activity>
 
-        <activity
-            android:name=".trust.TrustOnBoardingActivity"
-            android:enabled="true"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:label="@string/trust_title"
-            android:theme="@style/OnBoardingStyle">
-            <intent-filter android:priority="-4">
-                <action android:name="org.lineageos.lineageparts.TRUST_HINT" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
         <receiver
             android:name=".BootReceiver"
             android:enabled="true"
