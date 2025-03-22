@@ -1036,6 +1036,15 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     // returns true if the key was handled and should not be passed to the user
     private boolean backKeyPress() {
         mLogger.count("key_back_press", 1);
+
+        // NEW: Check if the foreground app is retroarch
+        String fgApp = getForegroundAppPackageName();
+        if (fgApp != null && fgApp.toLowerCase().contains("retroarch")) {
+            // Instead of the default behavior, send F1 key event on short press
+            triggerVirtualKeypress(KeyEvent.KEYCODE_F1);
+            return true; // Mark as handled
+        }
+
         // Cache handled state
         boolean handled = mBackKeyHandled;
 
@@ -1466,6 +1475,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     private void backLongPress() {
+        // NEW: Check if the foreground app is retroarch
+        String fgApp = getForegroundAppPackageName();
+        if (fgApp != null && fgApp.toLowerCase().contains("retroarch")) {
+            // Instead of the default long press behavior, send an ESC key event
+            triggerVirtualKeypress(KeyEvent.KEYCODE_ESCAPE);
+            return;
+        }
+
         if (hasLongPressOnBackBehavior()) {
             mBackKeyHandled = true;
 
@@ -1987,6 +2004,19 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
         im.injectInputEvent(downEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
         im.injectInputEvent(upEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+    }
+
+    /**
+     * Returns the package name of the current foreground app.
+     * (Uses getRunningTasks, which is allowed for system components.)
+     */
+    private String getForegroundAppPackageName() {
+        ActivityManager am = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(1);
+        if (tasks != null && !tasks.isEmpty() && tasks.get(0).topActivity != null) {
+            return tasks.get(0).topActivity.getPackageName();
+        }
+        return null;
     }
 
     private void performKeyAction(Action action, KeyEvent event) {
