@@ -876,11 +876,11 @@
 
     <!-- Boolean indicating whether the HWC setColorTransform function can be performed efficiently
          in hardware. -->
-    <bool name="config_setColorTransformAccelerated">false</bool>
+    <bool name="config_setColorTransformAccelerated">true</bool>
 
     <!-- Boolean indicating whether the HWC setColorTransform function can be performed efficiently
          in hardware for individual layers. -->
-    <bool name="config_setColorTransformAcceleratedPerLayer">false</bool>
+    <bool name="config_setColorTransformAcceleratedPerLayer">true</bool>
 
     <!-- Control whether Night display is available. This should only be enabled on devices
          that have a HWC implementation that can apply the matrix passed to setColorTransform
@@ -1125,7 +1125,7 @@
             0 - Nothing
             1 - Go to voice assist
     -->
-    <integer name="config_longPressOnBackBehavior">0</integer>
+    <integer name="config_longPressOnBackBehavior">11</integer>
 
     <!-- Allows activities to be launched on a long press on power during device setup. -->
     <bool name="config_allowStartActivityForLongPressOnPowerInSetup">false</bool>
@@ -1147,7 +1147,7 @@
             3 - Launch target activity defined by config_doublePressOnPowerTargetActivity
                 if available
     -->
-    <integer name="config_doublePressOnPowerBehavior">0</integer>
+    <integer name="config_doublePressOnPowerBehavior">2</integer>
 
     <!-- Activity name for the default target activity to be launched. Note that
             config_doublePressOnPowerBehavior must be set to 3 for this to work. [DO NOT TRANSLATE]
@@ -2606,11 +2606,11 @@
 
     <!-- Control whether the pickup gesture is enabled by default. This value will be used
      during initialization when the setting is still null. -->
-    <bool name="config_dozePickupGestureEnabled">true</bool>
+    <bool name="config_dozePickupGestureEnabled">false</bool>
 
     <!-- Control whether the always on display mode is enabled by default. This value will be used
          during initialization when the setting is still null. -->
-    <bool name="config_dozeAlwaysOnEnabled">true</bool>
+    <bool name="config_dozeAlwaysOnEnabled">false</bool>
 
     <!-- If AOD can show an ambient version of the wallpaper -->
     <bool name="config_dozeSupportsAodWallpaper">true</bool>
@@ -5757,7 +5757,7 @@
     <!-- Default value for Settings.ASSIST_LONG_PRESS_HOME_ENABLED -->
     <bool name="config_assistLongPressHomeEnabledDefault">true</bool>
     <!-- Default value for Settings.ASSIST_TOUCH_GESTURE_ENABLED -->
-    <bool name="config_assistTouchGestureEnabledDefault">true</bool>
+    <bool name="config_assistTouchGestureEnabledDefault">false</bool>
 
     <!-- The maximum byte size of the information contained in the bundle of
     HotwordDetectedResult. -->
