@@ -3811,7 +3811,7 @@
              opaque.
          2 - Nav bar is never forced opaque.
          -->
-    <integer name="config_navBarOpacityMode">2</integer>
+    <integer name="config_navBarOpacityMode">0</integer>
 
     <!-- Controls the navigation bar interaction mode:
          0: 3 button mode (back, home, overview buttons)
@@ -3821,10 +3821,10 @@
 
     <!-- Controls whether the nav bar can move from the bottom to the side in landscape.
          Only applies if the device display is not square. -->
-    <bool name="config_navBarCanMove">false</bool>
+    <bool name="config_navBarCanMove">true</bool>
 
     <!-- Controls whether the navigation bar lets through taps. -->
-    <bool name="config_navBarTapThrough">true</bool>
+    <bool name="config_navBarTapThrough">false</bool>
 
     <!-- Controls whether the IME renders the back and IME switcher buttons or not. -->
     <bool name="config_imeDrawsImeNavBar">false</bool>
@@ -5076,7 +5076,7 @@
     <!-- Whether or not to hide the navigation bar when the soft keyboard is visible in order to
          create additional screen real estate outside beyond the keyboard. Note that the user needs
          to have a confirmed way to dismiss the keyboard when desired. -->
-    <bool name="config_hideNavBarForKeyboard">false</bool>
+    <bool name="config_hideNavBarForKeyboard">true</bool>
 
     <!-- Whether or not to show the built-in charging animation when the device begins charging
          wirelessly. -->
