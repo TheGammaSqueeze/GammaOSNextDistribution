@@ -83,9 +83,9 @@ public abstract class StatefulActivity<STATE_TYPE extends BaseState<STATE_TYPE>>
 
     protected void inflateRootView(int layoutId) {
         mRootView = (LauncherRootView) LayoutInflater.from(this).inflate(layoutId, null);
-        mRootView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    //    mRootView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+    //            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+    //            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
     }
 
     @Override
