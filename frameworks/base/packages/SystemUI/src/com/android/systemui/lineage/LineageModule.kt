@@ -19,6 +19,13 @@ package com.android.systemui.lineage
 import com.android.systemui.qs.tileimpl.QSTileImpl
 import com.android.systemui.qs.tiles.AmbientDisplayTile
 import com.android.systemui.qs.tiles.AODTile
+import com.android.systemui.qs.tiles.PerformanceTile;
+import com.android.systemui.qs.tiles.FanTile;
+import com.android.systemui.qs.tiles.ABXYTile;
+import com.android.systemui.qs.tiles.AnalogAxisTile;
+import com.android.systemui.qs.tiles.AnalogSensitivityTile;
+import com.android.systemui.qs.tiles.RightAnalogAxisTile;
+import com.android.systemui.qs.tiles.DpadAnalogToggleTile;
 import com.android.systemui.qs.tiles.CaffeineTile
 import com.android.systemui.qs.tiles.CellularTile
 import com.android.systemui.qs.tiles.HeadsUpTile
@@ -48,6 +55,48 @@ interface LineageModule {
     @IntoMap
     @StringKey(AODTile.TILE_SPEC)
     fun bindAODTile(aodTile: AODTile): QSTileImpl<*>
+
+    /** Inject PerformanceTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(PerformanceTile.TILE_SPEC)
+    fun bindPerformanceTile(performanceTile: PerformanceTile): QSTileImpl<*>
+	
+    /** Inject FanTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(FanTile.TILE_SPEC)
+    fun bindFanTile(fanTile: FanTile): QSTileImpl<*>
+
+    /** Inject ABXYTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(ABXYTile.TILE_SPEC)
+    fun bindABXYTile(abxyTile: ABXYTile): QSTileImpl<*>
+
+    /** Inject AnalogAxisTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(AnalogAxisTile.TILE_SPEC)
+    fun bindAnalogAxisTile(analogaxisTile: AnalogAxisTile): QSTileImpl<*>
+
+    /** Inject AnalogSensitivityTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(AnalogSensitivityTile.TILE_SPEC)
+    fun bindAnalogSensitivityTile(analogsensitivityTile: AnalogSensitivityTile): QSTileImpl<*>
+
+    /** Inject RightAnalogAxisTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(RightAnalogAxisTile.TILE_SPEC)
+    fun bindRightAnalogAxisTile(rightanalogaxisTile: RightAnalogAxisTile): QSTileImpl<*>
+
+    /** Inject DpadAnalogToggleTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(DpadAnalogToggleTile.TILE_SPEC)
+    fun bindDpadAnalogToggleTile(dpadAnalogToggleTile: DpadAnalogToggleTile): QSTileImpl<*>
 
     /** Inject CaffeineTile into tileMap in QSModule */
     @Binds
