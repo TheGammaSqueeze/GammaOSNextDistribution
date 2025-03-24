@@ -1499,81 +1499,77 @@ public class InputMethodService extends AbstractInputMethodService {
         return ActivityManager.isHighEndGfx();
     }
 
-    @Override public void onCreate() {
-        Trace.traceBegin(TRACE_TAG_WINDOW_MANAGER, "IMS.onCreate");
-        mTheme = Resources.selectSystemTheme(mTheme,
-                getApplicationInfo().targetSdkVersion,
-                android.R.style.Theme_InputMethod,
-                android.R.style.Theme_Holo_InputMethod,
-                android.R.style.Theme_DeviceDefault_InputMethod,
-                android.R.style.Theme_DeviceDefault_InputMethod);
-        super.setTheme(mTheme);
-        super.onCreate();
-        mImm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
-        mSettingsObserver = SettingsObserver.createAndRegister(this);
-        // cache preference so we don't have to read ContentProvider when IME is requested to be
-        // shown the first time (cold start).
-        mSettingsObserver.shouldShowImeWithHardKeyboard();
-        mVolumeKeyCursorControl = Settings.System.getInt(getContentResolver(),
-                Settings.System.VOLUME_KEY_CURSOR_CONTROL, 0);
+@Override
+public void onCreate() {
+    Trace.traceBegin(TRACE_TAG_WINDOW_MANAGER, "IMS.onCreate");
+    mTheme = Resources.selectSystemTheme(mTheme,
+            getApplicationInfo().targetSdkVersion,
+            android.R.style.Theme_InputMethod,
+            android.R.style.Theme_Holo_InputMethod,
+            android.R.style.Theme_DeviceDefault_InputMethod,
+            android.R.style.Theme_DeviceDefault_InputMethod);
+    super.setTheme(mTheme);
+    super.onCreate();
+    mImm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+    mSettingsObserver = SettingsObserver.createAndRegister(this);
+    // Cache preference so we don't have to read ContentProvider when IME is requested (cold start).
+    mSettingsObserver.shouldShowImeWithHardKeyboard();
+    mVolumeKeyCursorControl = Settings.System.getInt(getContentResolver(),
+            Settings.System.VOLUME_KEY_CURSOR_CONTROL, 0);
 
-        mHideNavBarForKeyboard = getApplicationContext().getResources().getBoolean(
-                com.android.internal.R.bool.config_hideNavBarForKeyboard);
+    mHideNavBarForKeyboard = getApplicationContext().getResources().getBoolean(
+            com.android.internal.R.bool.config_hideNavBarForKeyboard);
 
-        // TODO(b/111364446) Need to address context lifecycle issue if need to re-create
-        // for update resources & configuration correctly when show soft input
-        // in non-default display.
-        mInflater = (LayoutInflater)getSystemService(
-                Context.LAYOUT_INFLATER_SERVICE);
-        Trace.traceBegin(TRACE_TAG_WINDOW_MANAGER, "IMS.initSoftInputWindow");
-        mWindow = new SoftInputWindow(this, mTheme, mDispatcherState);
-        if (mImeDispatcher != null) {
-            mWindow.getOnBackInvokedDispatcher()
-                    .setImeOnBackInvokedDispatcher(mImeDispatcher);
-        }
-        mNavigationBarController.onSoftInputWindowCreated(mWindow);
-        {
-            final Window window = mWindow.getWindow();
-            {
-                final WindowManager.LayoutParams lp = window.getAttributes();
-                lp.setTitle("InputMethod");
-                lp.type = WindowManager.LayoutParams.TYPE_INPUT_METHOD;
-                lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-                lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
-                lp.gravity = Gravity.BOTTOM;
-                lp.setFitInsetsTypes(statusBars() | navigationBars());
-                lp.setFitInsetsSides(Side.all() & ~Side.BOTTOM);
-                lp.receiveInsetsIgnoringZOrder = true;
-                window.setAttributes(lp);
-            }
-
-            // For ColorView in DecorView to work, FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS needs to be set
-            // by default (but IME developers can opt this out later if they want a new behavior).
-            final int windowFlags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                    | WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS;
-            final int windowFlagsMask = windowFlags
-                    | WindowManager.LayoutParams.FLAG_DIM_BEHIND;  // to be unset
-            window.setFlags(windowFlags, windowFlagsMask);
-
-            // Automotive devices may request the navigation bar to be hidden when the IME shows up
-            // (controlled via config_hideNavBarForKeyboard) in order to maximize the visible
-            // screen real estate. When this happens, the IME window should animate from the
-            // bottom of the screen to reduce the jank that happens from the lack of synchronization
-            // between the bottom system window and the IME window.
-            if (mHideNavBarForKeyboard) {
-                window.setDecorFitsSystemWindows(false);
-            }
-        }
-
-        initViews();
-        Trace.traceEnd(TRACE_TAG_WINDOW_MANAGER);
-
-        mInlineSuggestionSessionController = new InlineSuggestionSessionController(
-                this::onCreateInlineSuggestionsRequest, this::getHostInputToken,
-                this::onInlineSuggestionsResponse);
-        Trace.traceEnd(TRACE_TAG_WINDOW_MANAGER);
+    // Obtain LayoutInflater
+    mInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    Trace.traceBegin(TRACE_TAG_WINDOW_MANAGER, "IMS.initSoftInputWindow");
+    mWindow = new SoftInputWindow(this, mTheme, mDispatcherState);
+    if (mImeDispatcher != null) {
+        mWindow.getOnBackInvokedDispatcher().setImeOnBackInvokedDispatcher(mImeDispatcher);
     }
+    mNavigationBarController.onSoftInputWindowCreated(mWindow);
+    {
+        final Window window = mWindow.getWindow();
+        {
+            final WindowManager.LayoutParams lp = window.getAttributes();
+            lp.setTitle("InputMethod");
+            lp.type = WindowManager.LayoutParams.TYPE_INPUT_METHOD;
+            lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+            lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
+            lp.gravity = Gravity.BOTTOM;
+            lp.setFitInsetsTypes(statusBars() | navigationBars());
+            lp.setFitInsetsSides(Side.all() & ~Side.BOTTOM);
+            lp.receiveInsetsIgnoringZOrder = true;
+            window.setAttributes(lp);
+        }
+
+        final int windowFlags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS;
+        final int windowFlagsMask = windowFlags | WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+        window.setFlags(windowFlags, windowFlagsMask);
+
+        // When the configuration indicates that the nav bar should be hidden with the IME,
+        // let the system inset the IME window correctly and force the nav bar to be hidden.
+        if (mHideNavBarForKeyboard) {
+            window.setDecorFitsSystemWindows(true);
+            final View decorView = window.getDecorView();
+            decorView.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        }
+    }
+
+    initViews();
+    Trace.traceEnd(TRACE_TAG_WINDOW_MANAGER);
+
+    mInlineSuggestionSessionController = new InlineSuggestionSessionController(
+            this::onCreateInlineSuggestionsRequest, this::getHostInputToken,
+            this::onInlineSuggestionsResponse);
+    Trace.traceEnd(TRACE_TAG_WINDOW_MANAGER);
+}
 
     /**
      * This is a hook that subclasses can use to perform initialization of
@@ -2563,50 +2559,56 @@ public class InputMethodService extends AbstractInputMethodService {
         return result;
     }
 
-    public void showWindow(boolean showInput) {
-        if (DEBUG) Log.v(TAG, "Showing window: showInput=" + showInput
-                + " mShowInputRequested=" + mShowInputRequested
-                + " mViewsCreated=" + mViewsCreated
-                + " mDecorViewVisible=" + mDecorViewVisible
-                + " mWindowVisible=" + mWindowVisible
-                + " mInputStarted=" + mInputStarted
-                + " mShowInputFlags=" + mShowInputFlags);
+public void showWindow(boolean showInput) {
+    if (DEBUG) Log.v(TAG, "Showing window: showInput=" + showInput
+            + " mShowInputRequested=" + mShowInputRequested
+            + " mViewsCreated=" + mViewsCreated
+            + " mDecorViewVisible=" + mDecorViewVisible
+            + " mWindowVisible=" + mWindowVisible
+            + " mInputStarted=" + mInputStarted
+            + " mShowInputFlags=" + mShowInputFlags);
 
-        if (mInShowWindow) {
-            Log.w(TAG, "Re-entrance in to showWindow");
-            return;
-        }
-
-        ImeTracing.getInstance().triggerServiceDump("InputMethodService#showWindow", mDumper,
-                null /* icProto */);
-        Trace.traceBegin(TRACE_TAG_WINDOW_MANAGER, "IMS.showWindow");
-        mDecorViewWasVisible = mDecorViewVisible;
-        mInShowWindow = true;
-        final int previousImeWindowStatus =
-                (mDecorViewVisible ? IME_ACTIVE : 0) | (isInputViewShown()
-                        ? (!mWindowVisible ? IME_INVISIBLE : IME_VISIBLE) : 0);
-        startViews(prepareWindow(showInput));
-        final int nextImeWindowStatus = mapToImeWindowStatus();
-        if (previousImeWindowStatus != nextImeWindowStatus) {
-            setImeWindowStatus(nextImeWindowStatus, mBackDisposition);
-        }
-
-        mNavigationBarController.onWindowShown();
-        // compute visibility
-        onWindowShown();
-        mWindowVisible = true;
-
-        // request draw for the IME surface.
-        if (DEBUG) Log.v(TAG, "showWindow: draw decorView!");
-        mWindow.show();
-        mDecorViewWasVisible = true;
-        applyVisibilityInInsetsConsumerIfNecessary(true);
-        cancelImeSurfaceRemoval();
-        mInShowWindow = false;
-        Trace.traceEnd(TRACE_TAG_WINDOW_MANAGER);
-        registerCompatOnBackInvokedCallback();
+    if (mInShowWindow) {
+        Log.w(TAG, "Re-entrance in to showWindow");
+        return;
     }
 
+    ImeTracing.getInstance().triggerServiceDump("InputMethodService#showWindow", mDumper, null);
+    Trace.traceBegin(TRACE_TAG_WINDOW_MANAGER, "IMS.showWindow");
+    mDecorViewWasVisible = mDecorViewVisible;
+    mInShowWindow = true;
+    final int previousImeWindowStatus =
+            (mDecorViewVisible ? IME_ACTIVE : 0) | (isInputViewShown() ? (!mWindowVisible ? IME_INVISIBLE : IME_VISIBLE) : 0);
+    startViews(prepareWindow(showInput));
+    final int nextImeWindowStatus = mapToImeWindowStatus();
+    if (previousImeWindowStatus != nextImeWindowStatus) {
+        setImeWindowStatus(nextImeWindowStatus, mBackDisposition);
+    }
+
+    mNavigationBarController.onWindowShown();
+    // Invoke onWindowShown() to allow reapplication of UI flags.
+    onWindowShown();
+    mWindowVisible = true;
+
+    if (DEBUG) Log.v(TAG, "showWindow: draw decorView!");
+    mWindow.show();
+    mDecorViewWasVisible = true;
+    // Reapply immersive flags after the window is shown.
+    if (mHideNavBarForKeyboard) {
+        final View decorView = mWindow.getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        decorView.requestApplyInsets();
+    }
+    applyVisibilityInInsetsConsumerIfNecessary(true);
+    cancelImeSurfaceRemoval();
+    mInShowWindow = false;
+    Trace.traceEnd(TRACE_TAG_WINDOW_MANAGER);
+    registerCompatOnBackInvokedCallback();
+}
 
     /**
      * Registers an {@link OnBackInvokedCallback} to handle back invocation when ahead-of-time
@@ -2740,10 +2742,18 @@ public class InputMethodService extends AbstractInputMethodService {
      * You could override this to prepare for the window to be shown
      * (update view structure etc).
      */
-    public void onWindowShown() {
-        // Intentionally empty
+public void onWindowShown() {
+    if (mHideNavBarForKeyboard) {
+        final View decorView = mWindow.getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        decorView.requestApplyInsets();
     }
-    
+}
+
     /**
      * Called when the input method window has been hidden from the user,
      * after previously being visible.

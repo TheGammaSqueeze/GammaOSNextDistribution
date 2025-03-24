@@ -3811,7 +3811,7 @@
              opaque.
          2 - Nav bar is never forced opaque.
          -->
-    <integer name="config_navBarOpacityMode">0</integer>
+    <integer name="config_navBarOpacityMode">2</integer>
 
     <!-- Controls the navigation bar interaction mode:
          0: 3 button mode (back, home, overview buttons)
@@ -3821,13 +3821,13 @@
 
     <!-- Controls whether the nav bar can move from the bottom to the side in landscape.
          Only applies if the device display is not square. -->
-    <bool name="config_navBarCanMove">true</bool>
+    <bool name="config_navBarCanMove">false</bool>
 
     <!-- Controls whether the navigation bar lets through taps. -->
-    <bool name="config_navBarTapThrough">false</bool>
+    <bool name="config_navBarTapThrough">true</bool>
 
     <!-- Controls whether the IME renders the back and IME switcher buttons or not. -->
-    <bool name="config_imeDrawsImeNavBar">false</bool>
+    <bool name="config_imeDrawsImeNavBar">true</bool>
 
     <!-- Controls whether the side edge gestures can always trigger the transient nav bar to
          show. -->
@@ -3852,11 +3852,11 @@
 
     <!-- Controls whether seamless rotation should be allowed even though the navbar can move
          (which normally prevents seamless rotation). -->
-    <bool name="config_allowSeamlessRotationDespiteNavBarMoving">false</bool>
+    <bool name="config_allowSeamlessRotationDespiteNavBarMoving">true</bool>
 
     <!-- Controls whether hints for gestural navigation are shown when the device is setup.
          This should only be set when the device has gestural navigation enabled by default. -->
-    <bool name="config_showGesturalNavigationHints">true</bool>
+    <bool name="config_showGesturalNavigationHints">false</bool>
 
     <!-- Controls the free snap mode for the docked stack divider. In this mode, the divider can be
          snapped to any position between the first target and the last target. -->
@@ -5076,7 +5076,7 @@
     <!-- Whether or not to hide the navigation bar when the soft keyboard is visible in order to
          create additional screen real estate outside beyond the keyboard. Note that the user needs
          to have a confirmed way to dismiss the keyboard when desired. -->
-    <bool name="config_hideNavBarForKeyboard">true</bool>
+    <bool name="config_hideNavBarForKeyboard">false</bool>
 
     <!-- Whether or not to show the built-in charging animation when the device begins charging
          wirelessly. -->
@@ -5475,7 +5475,7 @@
     <string name="config_globalAppSearchDataQuerierPackage" translatable="false"></string>
 
     <!-- If true, attach the navigation bar to the app during app transition -->
-    <bool name="config_attachNavBarToAppDuringTransition">false</bool>
+    <bool name="config_attachNavBarToAppDuringTransition">true</bool>
 
     <!-- Flag indicating that the media framework should play a back sound when a back-transition
          happens that doesn't result in bringing the home task to the front.
