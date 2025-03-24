@@ -3827,7 +3827,7 @@
     <bool name="config_navBarTapThrough">true</bool>
 
     <!-- Controls whether the IME renders the back and IME switcher buttons or not. -->
-    <bool name="config_imeDrawsImeNavBar">true</bool>
+    <bool name="config_imeDrawsImeNavBar">false</bool>
 
     <!-- Controls whether the side edge gestures can always trigger the transient nav bar to
          show. -->
