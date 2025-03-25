@@ -368,6 +368,18 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private static final String ACTION_TORCH_OFF =
             "com.android.server.policy.PhoneWindowManager.ACTION_TORCH_OFF";
 
+    // New flag to indicate that brightness adjustment via volume keys is active.
+    private boolean mBackBrightnessMode = false;
+
+    // Number of steps between minimum and maximum brightness.
+    private static final int BRIGHTNESS_STEPS = 10;
+
+    // Track whether the back key is currently pressed.
+	private boolean mBackPressed = false;
+	
+    // Flag indicating that a long press on the back key has been activated.
+    private boolean mBackLongPressActivated = false;
+		
     /**
      * Keyguard stuff
      */
@@ -671,9 +683,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     int mRingerToggleChord = VOLUME_HUSH_OFF;
 
     private static final long BUGREPORT_TV_GESTURE_TIMEOUT_MILLIS = 1000;
-
-    /* The number of steps between min and max brightness */
-    private static final int BRIGHTNESS_STEPS = 10;
 
     SettingsObserver mSettingsObserver;
     ModifierShortcutManager mModifierShortcutManager;
@@ -3291,6 +3300,46 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         final boolean longPress = (flags & KeyEvent.FLAG_LONG_PRESS) != 0;
         final boolean virtualKey = event.getDeviceId() == KeyCharacterMap.VIRTUAL_KEYBOARD;
 
+        // Begin custom brightness adjustment logic.
+        // Track the state of the BACK key.
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (down) {
+                mBackPressed = true;
+                // If this key event carries the long press flag, record that a long press has occurred.
+                if (longPress) {
+                    mBackLongPressActivated = true;
+                }
+            } else {
+                mBackPressed = false;
+                mBackLongPressActivated = false;
+                mBackBrightnessMode = false;
+            }
+        }
+
+        // If brightness mode is active, intercept back, home, F1, or ESC keys.
+        if (mBackBrightnessMode &&
+                (keyCode == KeyEvent.KEYCODE_BACK ||
+                 keyCode == KeyEvent.KEYCODE_HOME ||
+                 keyCode == KeyEvent.KEYCODE_F1 ||
+                 keyCode == KeyEvent.KEYCODE_ESCAPE)) {
+            if (keyCode == KeyEvent.KEYCODE_BACK && !down) {
+                mBackBrightnessMode = false;
+            }
+            return key_consumed;
+        }
+
+        if ((keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
+                && mBackPressed && !mBackLongPressActivated) {
+            if (!mBackBrightnessMode) {
+                mBackBrightnessMode = true;
+            }
+            if (down) {
+                int direction = (keyCode == KeyEvent.KEYCODE_VOLUME_UP) ? 1 : -1;
+                adjustScreenBrightness(direction);
+            }
+            return key_consumed;
+        }
+
         if (DEBUG_INPUT) {
             Log.d(TAG, "interceptKeyTi keyCode=" + keyCode + " down=" + down + " repeatCount="
                     + repeatCount + " keyguardOn=" + keyguardOn + " canceled=" + canceled);
@@ -3694,6 +3743,41 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
         // Let the application handle the key.
         return key_not_consumed;
+    }
+
+    /**
+     * Adjusts the screen brightness by a fixed step.
+     * A positive direction increases brightness while a negative value decreases it.
+     *
+     * This method retrieves the minimum and maximum brightness constraints, computes a step
+     * value based on the configured number of brightness steps, and then adjusts the current
+     * brightness accordingly. Finally, it launches the brightness dialog so the user can
+     * see the change.
+     *
+     * @param direction +1 to increase brightness, -1 to decrease brightness.
+     */
+    private void adjustScreenBrightness(int direction) {
+        // Retrieve the brightness constraints from the PowerManager.
+        float minBrightness = mPowerManager.getBrightnessConstraint(
+                PowerManager.BRIGHTNESS_CONSTRAINT_TYPE_MINIMUM);
+        float maxBrightness = mPowerManager.getBrightnessConstraint(
+                PowerManager.BRIGHTNESS_CONSTRAINT_TYPE_MAXIMUM);
+
+        // Use the default display for the brightness adjustment.
+        int defaultDisplayId = Display.DEFAULT_DISPLAY;
+
+        // Retrieve the current brightness for the default display.
+        float currentBrightness = mDisplayManager.getBrightness(defaultDisplayId);
+
+        // Calculate the step size based on the total range and number of steps.
+        float step = (maxBrightness - minBrightness) / BRIGHTNESS_STEPS;
+
+        // Compute the new brightness value, clamped between the min and max.
+        float newBrightness = currentBrightness + (step * direction);
+        newBrightness = Math.max(minBrightness, Math.min(maxBrightness, newBrightness));
+
+        // Apply the new brightness value.
+        mDisplayManager.setBrightness(defaultDisplayId, newBrightness);
     }
 
     /**
