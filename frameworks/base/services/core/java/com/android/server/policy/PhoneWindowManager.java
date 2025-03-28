@@ -379,7 +379,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 	
     // Flag indicating that a long press on the back key has been activated.
     private boolean mBackLongPressActivated = false;
-		
+
+    // Timer to count how long back button has been pressed
+    private long mBackDownTime = 0;
+	
     /**
      * Keyguard stuff
      */
@@ -3304,6 +3307,15 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         // Track the state of the BACK key.
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (down) {
+                // On first DOWN, record the event time.
+                if (mBackDownTime == 0) {
+                    mBackDownTime = event.getEventTime();
+                }
+                long elapsed = SystemClock.uptimeMillis() - mBackDownTime;
+                if (elapsed < 100) {
+                    // Delay further processing until 100 ms have passed.
+                    return 100 - elapsed;
+                }
                 mBackPressed = true;
                 // If this key event carries the long press flag, record that a long press has occurred.
                 if (longPress) {
