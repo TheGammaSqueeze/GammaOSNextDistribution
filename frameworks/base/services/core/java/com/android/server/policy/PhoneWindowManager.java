@@ -382,7 +382,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     // Timer to count how long back button has been pressed
     private long mBackDownTime = 0;
-	
+    private boolean mRetroarchBlockOverride = false;
+   
     /**
      * Keyguard stuff
      */
@@ -1048,13 +1049,19 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     // returns true if the key was handled and should not be passed to the user
     private boolean backKeyPress() {
         mLogger.count("key_back_press", 1);
+        // If retroarch override is enabled...
         if (SystemProperties.getInt("persist.gammaos.retroarchoverride.backbutton", 0) == 1) {
-            // Check if the foreground app is retroarch
+            // If a simultaneous physical key (from a joypad) was detected,
+            // do not trigger the F1 logic; just consume the event.
+            if (mRetroarchBlockOverride) {
+                mRetroarchBlockOverride = false; // reset for next round
+                return true; // consume the event without further processing
+            }
+            // Otherwise, if retroarch is the foreground app, send F1 on short press.
             String fgApp = getForegroundAppPackageName();
             if (fgApp != null && fgApp.toLowerCase().contains("retroarch")) {
-                // Instead of the default behavior, send F1 key event on short press
                 triggerVirtualKeypress(KeyEvent.KEYCODE_F1);
-                return true; // Mark as handled
+                return true; // event handled
             }
         }
 
@@ -1488,23 +1495,27 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     private void backLongPress() {
+        // When retroarch override is enabled...
         if (SystemProperties.getInt("persist.gammaos.retroarchoverride.backbutton", 0) == 1) {
-            // Check if the foreground app is retroarch
+            // If the block flag is set due to a concurrent physical key, consume the event.
+            if (mRetroarchBlockOverride) {
+                mRetroarchBlockOverride = false;
+                return;
+            }
+            // If retroarch is foregrounded, send ESC on long press instead.
             String fgApp = getForegroundAppPackageName();
             if (fgApp != null && fgApp.toLowerCase().contains("retroarch")) {
-                // Instead of the default long press behavior, send an ESC key event
                 triggerVirtualKeypress(KeyEvent.KEYCODE_ESCAPE);
                 return;
             }
         }
+        // Otherwise use the regular long press behavior.
         if (hasLongPressOnBackBehavior()) {
             mBackKeyHandled = true;
-
             long now = SystemClock.uptimeMillis();
             KeyEvent event = new KeyEvent(now, now, KeyEvent.ACTION_DOWN,
                     KEYCODE_BACK, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
                     KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
-
             performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, false,
                     "Back - Long Press");
             performKeyAction(mBackLongPressAction, event);
@@ -3325,6 +3336,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 mBackPressed = false;
                 mBackLongPressActivated = false;
                 mBackBrightnessMode = false;
+                mRetroarchBlockOverride = false;
             }
         }
 
@@ -3350,6 +3362,16 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 adjustScreenBrightness(direction);
             }
             return key_consumed;
+        }
+
+        if (SystemProperties.getInt("persist.gammaos.retroarchoverride.backbutton", 0) == 1) {
+            String fgApp = getForegroundAppPackageName();
+            if (fgApp != null && fgApp.toLowerCase().contains("retroarch")) {
+                // If this event is NOT the back key and a back key is already pressed, set the block flag.
+                if (keyCode != KeyEvent.KEYCODE_BACK && mBackPressed) {
+                    mRetroarchBlockOverride = true;
+                }
+            }
         }
 
         if (DEBUG_INPUT) {
