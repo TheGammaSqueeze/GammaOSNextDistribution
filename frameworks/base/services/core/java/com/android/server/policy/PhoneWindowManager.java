@@ -241,6 +241,7 @@ import org.lineageos.internal.util.ActionUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -249,6 +250,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.io.BufferedReader;
 
 /**
  * WindowManagerPolicy implementation for the Android phone UI.  This
@@ -3296,6 +3298,44 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             WindowManager.LayoutParams.TYPE_SYSTEM_ERROR,
         };
 
+	private String readFile(String path) throws IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(path));
+		StringBuilder sb = new StringBuilder();
+		String line;
+		while ((line = reader.readLine()) != null) {
+			sb.append(line);
+		}
+		reader.close();
+		return sb.toString();
+	}
+
+	private String findDevicePathByName(String deviceName) {
+		File inputDir = new File("/dev/input");
+		File[] eventFiles = inputDir.listFiles(new FilenameFilter() {
+			public boolean accept(File dir, String name) {
+				return name.startsWith("event");
+			}
+		});
+
+		if (eventFiles != null) {
+			for (File eventFile : eventFiles) {
+				String eventFilePath = eventFile.getAbsolutePath();
+				// Build the sysfs path for this event device.
+				String sysfsPath = "/sys/class/input/" + eventFile.getName() + "/device/name";
+				try {
+					String sysfsName = readFile(sysfsPath).trim();
+					Log.d(TAG, "Found sysfs name for " + eventFilePath + ": " + sysfsName);
+					if (sysfsName.equals(deviceName)) {
+						return eventFilePath;
+					}
+				} catch (IOException e) {
+					Log.e(TAG, "Error reading " + sysfsPath, e);
+				}
+			}
+		}
+		return null;
+	}
+
     private void sendBtnSelectDown(String devicePath) {
         try {
             // Send BTN_SELECT down: type 1 (EV_KEY), code 314, value 1
@@ -3317,6 +3357,27 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             Log.e(TAG, "Failed to send BTN_SELECT up event", e);
         }
     }
+
+	private String getDevicePathForEvent(KeyEvent event) {
+		InputDevice device = InputManager.getInstance().getInputDevice(event.getDeviceId());
+		if (device != null) {
+			String descriptor = device.getDescriptor();
+			String deviceName = device.getName();
+			Log.d(TAG, "InputDevice name: " + deviceName + ", descriptor: " + descriptor);
+			
+			String devicePath = findDevicePathByName(deviceName);
+			if (devicePath != null) {
+				Log.d(TAG, "Found matching device path: " + devicePath);
+				return devicePath;
+			} else {
+				Log.e(TAG, "No matching event file found for device: " + deviceName);
+			}
+		} else {
+			Log.e(TAG, "InputDevice is null for device id: " + event.getDeviceId());
+		}
+		Log.e(TAG, "Falling back to /dev/input/event5");
+		return "/dev/input/event5";
+	}
 
     // TODO(b/117479243): handle it in InputPolicy
     /** {@inheritDoc} */
@@ -3386,25 +3447,25 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             return key_consumed;
         }
 
-        if (SystemProperties.getInt("persist.gammaos.retroarchoverride.backbutton", 0) == 1) {
-            String fgApp = getForegroundAppPackageName();
-            if (fgApp != null && fgApp.toLowerCase().contains("retroarch")) {
-                // If the event is not for the BACK key and the back key is currently pressed:
-                if (keyCode != KeyEvent.KEYCODE_BACK && mBackPressed) {
-                    mRetroarchBlockOverride = true;
-                    // Use actual sendevent commands to send BTN_SELECT down
-                    sendBtnSelectDown("/dev/input/event5");
-                }
-            }
-        }
+		if (SystemProperties.getInt("persist.gammaos.retroarchoverride.backbutton", 0) == 1) {
+			String fgApp = getForegroundAppPackageName();
+			if (fgApp != null && fgApp.toLowerCase().contains("retroarch")) {
+				// If the event is not for the BACK key and the back key is currently pressed:
+				if (keyCode != KeyEvent.KEYCODE_BACK && mBackPressed) {
+					mRetroarchBlockOverride = true;
+					String devicePath = getDevicePathForEvent(event);
+					sendBtnSelectDown(devicePath);
+				}
+			}
+		}
 
-        if (keyCode == KeyEvent.KEYCODE_BACK && !down) {
-            // Release the synthetic BTN_SELECT event when back key is released.
-            sendBtnSelectUp("/dev/input/event5");
-            // Reset any relevant state
-            mBackPressed = false;
-            mRetroarchBlockOverride = false;
-        }
+		// Later, when processing the BACK key release:
+		if (keyCode == KeyEvent.KEYCODE_BACK && !down) {
+			String devicePath = getDevicePathForEvent(event);
+			sendBtnSelectUp(devicePath);
+			mBackPressed = false;
+			mRetroarchBlockOverride = false;
+		}
 
         if (DEBUG_INPUT) {
             Log.d(TAG, "interceptKeyTi keyCode=" + keyCode + " down=" + down + " repeatCount="
