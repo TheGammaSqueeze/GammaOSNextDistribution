@@ -3296,6 +3296,28 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             WindowManager.LayoutParams.TYPE_SYSTEM_ERROR,
         };
 
+    private void sendBtnSelectDown(String devicePath) {
+        try {
+            // Send BTN_SELECT down: type 1 (EV_KEY), code 314, value 1
+            Runtime.getRuntime().exec("sendevent " + devicePath + " 1 314 1");
+            // Follow with a synchronization event
+            Runtime.getRuntime().exec("sendevent " + devicePath + " 0 0 0");
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to send BTN_SELECT down event", e);
+        }
+    }
+
+    private void sendBtnSelectUp(String devicePath) {
+        try {
+            // Send BTN_SELECT up: type 1 (EV_KEY), code 314, value 0
+            Runtime.getRuntime().exec("sendevent " + devicePath + " 1 314 0");
+            // Follow with a synchronization event
+            Runtime.getRuntime().exec("sendevent " + devicePath + " 0 0 0");
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to send BTN_SELECT up event", e);
+        }
+    }
+
     // TODO(b/117479243): handle it in InputPolicy
     /** {@inheritDoc} */
     @Override
@@ -3367,11 +3389,21 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         if (SystemProperties.getInt("persist.gammaos.retroarchoverride.backbutton", 0) == 1) {
             String fgApp = getForegroundAppPackageName();
             if (fgApp != null && fgApp.toLowerCase().contains("retroarch")) {
-                // If this event is NOT the back key and a back key is already pressed, set the block flag.
+                // If the event is not for the BACK key and the back key is currently pressed:
                 if (keyCode != KeyEvent.KEYCODE_BACK && mBackPressed) {
                     mRetroarchBlockOverride = true;
+                    // Use actual sendevent commands to send BTN_SELECT down
+                    sendBtnSelectDown("/dev/input/event5");
                 }
             }
+        }
+
+        if (keyCode == KeyEvent.KEYCODE_BACK && !down) {
+            // Release the synthetic BTN_SELECT event when back key is released.
+            sendBtnSelectUp("/dev/input/event5");
+            // Reset any relevant state
+            mBackPressed = false;
+            mRetroarchBlockOverride = false;
         }
 
         if (DEBUG_INPUT) {
