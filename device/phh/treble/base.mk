@@ -43,14 +43,7 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
 	ro.adb.secure=0 \
 	ro.logd.auditd=true \
 	ro.logd.kernel=true \
-	ro.sensors.gyroscope_orientation=ORIENTATION_90 \
 	ro.surface_flinger.supports_background_blur=1 \
-	ro.input_flinger.primary_touch_orientation=ORIENTATION_90 \
-	ro.sensors.accelerometer_orientation=ORIENTATION_90 \
-	ro.sensors.magnetometer_orientation=ORIENTATION_90 \
-	ro.surface_flinger.supports_background_blur=1 \
-
-PRODUCT_PROPERTY_OVERRIDES += ro.surface_flinger.primary_display_orientation=ORIENTATION_90 \
 
 PRODUCT_VENDOR_PROPERTIES += \
        ro.surface_flinger.supports_background_blur=1
