@@ -385,7 +385,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     // Timer to count how long back button has been pressed
     private long mBackDownTime = 0;
     private boolean mRetroarchBlockOverride = false;
-   
+
+	// The device id from which the BACK key event came.
+	private int mBackDeviceId = -1;
+	// The device id from which the non-BACK (combo) key was received (if different from BACK).
+	private int mRetroarchComboDeviceId = -1;
+
     /**
      * Keyguard stuff
      */
@@ -3358,24 +3363,22 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         }
     }
 
-	private String getDevicePathForEvent(KeyEvent event) {
-		InputDevice device = InputManager.getInstance().getInputDevice(event.getDeviceId());
+	private String getDevicePathForDeviceId(int deviceId) {
+		InputDevice device = InputManager.getInstance().getInputDevice(deviceId);
 		if (device != null) {
-			String descriptor = device.getDescriptor();
 			String deviceName = device.getName();
-			Log.d(TAG, "InputDevice name: " + deviceName + ", descriptor: " + descriptor);
-			
+			Log.d(TAG, "Target InputDevice name: " + deviceName + " (deviceId: " + deviceId + ")");
 			String devicePath = findDevicePathByName(deviceName);
 			if (devicePath != null) {
-				Log.d(TAG, "Found matching device path: " + devicePath);
+				Log.d(TAG, "Found matching device path for target: " + devicePath);
 				return devicePath;
 			} else {
 				Log.e(TAG, "No matching event file found for device: " + deviceName);
 			}
 		} else {
-			Log.e(TAG, "InputDevice is null for device id: " + event.getDeviceId());
+			Log.e(TAG, "InputDevice is null for device id: " + deviceId);
 		}
-		Log.e(TAG, "Falling back to /dev/input/event5");
+		Log.e(TAG, "Falling back to /dev/input/event5 for target");
 		return "/dev/input/event5";
 	}
 
@@ -3399,29 +3402,27 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
         // Begin custom brightness adjustment logic.
         // Track the state of the BACK key.
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (down) {
-                // On first DOWN, record the event time.
-                if (mBackDownTime == 0) {
-                    mBackDownTime = event.getEventTime();
-                }
-                long elapsed = SystemClock.uptimeMillis() - mBackDownTime;
-                if (elapsed < 100) {
-                    // Delay further processing until 100 ms have passed.
-                    return 100 - elapsed;
-                }
-                mBackPressed = true;
-                // If this key event carries the long press flag, record that a long press has occurred.
-                if (longPress) {
-                    mBackLongPressActivated = true;
-                }
-            } else {
-                mBackPressed = false;
-                mBackLongPressActivated = false;
-                mBackBrightnessMode = false;
-                mRetroarchBlockOverride = false;
-            }
-        }
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			if (down) {
+				// On first DOWN, record the event time and the device id for BACK.
+				if (mBackDownTime == 0) {
+					mBackDownTime = event.getEventTime();
+				}
+				mBackPressed = true;
+				mBackDeviceId = event.getDeviceId();
+				// Also, reset any stored combo device id.
+				mRetroarchComboDeviceId = -1;
+				if (longPress) {
+					mBackLongPressActivated = true;
+				}
+			} else {
+				// On BACK key release, reset flags.
+				mBackPressed = false;
+				mBackLongPressActivated = false;
+				mBackBrightnessMode = false;
+				mRetroarchBlockOverride = false;
+			}
+		}
 
         // If brightness mode is active, intercept back, home, F1, or ESC keys.
         if (mBackBrightnessMode &&
@@ -3450,10 +3451,16 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 		if (SystemProperties.getInt("persist.gammaos.retroarchoverride.backbutton", 0) == 1) {
 			String fgApp = getForegroundAppPackageName();
 			if (fgApp != null && fgApp.toLowerCase().contains("retroarch")) {
-				// If the event is not for the BACK key and the back key is currently pressed:
+				// For non-BACK events while BACK is pressed:
 				if (keyCode != KeyEvent.KEYCODE_BACK && mBackPressed) {
-					mRetroarchBlockOverride = true;
-					String devicePath = getDevicePathForEvent(event);
+					// If the non-BACK key comes from a different device than the BACK key,
+					// record that device id as the combo device.
+					if (event.getDeviceId() != mBackDeviceId) {
+						mRetroarchComboDeviceId = event.getDeviceId();
+					}
+					// Determine the target device: use the combo device if set; otherwise, fall back to the BACK device.
+					int targetDeviceId = (mRetroarchComboDeviceId != -1) ? mRetroarchComboDeviceId : mBackDeviceId;
+					String devicePath = getDevicePathForDeviceId(targetDeviceId);
 					sendBtnSelectDown(devicePath);
 				}
 			}
@@ -3461,10 +3468,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
 		// Later, when processing the BACK key release:
 		if (keyCode == KeyEvent.KEYCODE_BACK && !down) {
-			String devicePath = getDevicePathForEvent(event);
+			int targetDeviceId = (mRetroarchComboDeviceId != -1) ? mRetroarchComboDeviceId : mBackDeviceId;
+			String devicePath = getDevicePathForDeviceId(targetDeviceId);
 			sendBtnSelectUp(devicePath);
 			mBackPressed = false;
 			mRetroarchBlockOverride = false;
+			// Reset stored device ids.
+			mRetroarchComboDeviceId = -1;
+			mBackDeviceId = -1;
 		}
 
         if (DEBUG_INPUT) {
