@@ -360,9 +360,11 @@ public class BrightnessController implements ToggleSlider.Listener, MirroredBrig
             minBacklight = mBrightnessMin;
             maxBacklight = mBrightnessMax;
         }
-        final float valFloat = MathUtils.min(
-                convertGammaToLinearFloat(value, minBacklight, maxBacklight),
-                maxBacklight);
+        // Linear mapping: slider [0..max] → brightness [minBacklight..maxBacklight]
+        float fraction = value / (float)mControl.getMax();
+        final float valFloat = MathUtils.constrain(
+                minBacklight + fraction * (maxBacklight - minBacklight),
+                minBacklight, maxBacklight);
         if (stopTracking) {
             // TODO(brightnessfloat): change to use float value instead.
             MetricsLogger.action(mContext, metric,
@@ -441,7 +443,9 @@ public class BrightnessController implements ToggleSlider.Listener, MirroredBrig
             return;
         }
         // Returns GAMMA_SPACE_MIN - GAMMA_SPACE_MAX
-        final int sliderVal = convertLinearToGammaFloat(brightnessValue, min, max);
+        // Linear mapping: brightness [min..max] → slider [0..max]
+        float fraction = (brightnessValue - min) / (max - min);
+        final int sliderVal = Math.round(fraction * mControl.getMax());
         animateSliderTo(sliderVal);
     }
 
