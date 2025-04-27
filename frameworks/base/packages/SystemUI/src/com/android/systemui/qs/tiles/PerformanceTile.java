@@ -23,12 +23,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
-import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.service.quicksettings.Tile;
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.Nullable;
@@ -46,22 +45,21 @@ import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
 
 import javax.inject.Inject;
-import java.io.OutputStream;
-import android.util.Log;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
 
 /** Quick settings tile: Performance **/
 public class PerformanceTile extends QSTileImpl<BooleanState> {
-	
+
     public static final String TILE_SPEC = "performance";
 
-    private static final int STATE_ONE = 0;
-    private static final int STATE_TWO = 1;
-    private static final int STATE_THREE = 2;
-    private int currentState;
+    private static final String PROP_PERF_MODE    = "persist.gammaos.performance_mode";
+    private static final String MODE_STOCK        = "stock";
+    private static final String MODE_POWERSAVE    = "powersave";
+    private static final String MODE_MAX          = "max";
 
+    private static final int STATE_STOCK         = 0;
+    private static final int STATE_POWERSAVE     = 1;
+    private static final int STATE_MAX           = 2;
+    private int currentState;
 
     private final Icon mIcon = ResourceIcon.get(R.drawable.ic_device_thermostat_on);
     private final Receiver mReceiver = new Receiver();
@@ -69,7 +67,7 @@ public class PerformanceTile extends QSTileImpl<BooleanState> {
     @Inject
     public PerformanceTile(
             QSHost host,
-            @Background Looper backgroundLooper,
+            @Background Looper bgLooper,
             @Main Handler mainHandler,
             FalsingManager falsingManager,
             MetricsLogger metricsLogger,
@@ -77,20 +75,19 @@ public class PerformanceTile extends QSTileImpl<BooleanState> {
             ActivityStarter activityStarter,
             QSLogger qsLogger
     ) {
-        super(host, backgroundLooper, mainHandler, falsingManager, metricsLogger,
-                statusBarStateController, activityStarter, qsLogger);
-	currentState = readPerformanceControlValue(); // Initialize currentState based on PERFORMANCE_MODE
-        mReceiver.init();
-    }
+        super(host, bgLooper, mainHandler, falsingManager, metricsLogger,
+              statusBarStateController, activityStarter, qsLogger);
 
-    private int readPerformanceControlValue() {
-        try {
-            String commandOutput = sendShellCommand("od -An -t dI /data/rgp2xbox/PERFORMANCE_MODE");
-            return Integer.parseInt(commandOutput.trim());
-        } catch (NumberFormatException e) {
-            Log.e("PerformanceTile", "Error parsing PERFORMANCE_MODE value", e);
-            return STATE_ONE; // default value if reading fails
-        }
+        // 1) Read the persisted prop (default to max if missing), map to our state enum
+        currentState = mapPropToState(
+                SystemProperties.get(PROP_PERF_MODE, MODE_MAX)
+        );
+
+        // 2) Re-apply it (in case it's been changed externally between boots)
+        applyState(currentState);
+
+        // 3) Listen for screen-off and boot so we can re-sync
+        mReceiver.init();
     }
 
     @Override
@@ -105,31 +102,49 @@ public class PerformanceTile extends QSTileImpl<BooleanState> {
     }
 
     @Override
-    public void handleSetListening(boolean listening) {
+    protected void handleSetListening(boolean listening) {
+        super.handleSetListening(listening);
+        if (listening) {
+            // Re-read the prop when QS panel is opened
+            int newState = mapPropToState(
+                    SystemProperties.get(PROP_PERF_MODE, MODE_MAX)
+            );
+            // If it changed externally, update and refresh tile
+            if (newState != currentState) {
+                currentState = newState;
+                refreshState();
+            }
+        }
     }
 
     @Override
     protected void handleClick(@Nullable View view) {
-        switch (currentState) {
-            case STATE_ONE:
-		sendShellCommand("/system/bin/setclockvalue_stock.sh");
-                currentState = STATE_TWO;
-                break;
-            case STATE_TWO:
-                sendShellCommand("/system/bin/setclockvalue_powersave.sh");
-                currentState = STATE_THREE;
-                break;
-            case STATE_THREE:
-                sendShellCommand("/system/bin/setclockvalue_max.sh");
-                currentState = STATE_ONE;
-                break;
-        }
+        // Cycle through STOCK → POWERSAVE → MAX → STOCK …
+        currentState = (currentState + 1) % 3;
+        applyState(currentState);
         refreshState();
     }
 
     @Override
-    protected void handleLongClick(@Nullable View view) {
-        refreshState();
+    protected void handleUpdateState(BooleanState state, Object arg) {
+        switch (currentState) {
+            case STATE_STOCK:
+                state.label = "Stock Performance Mode";
+                state.icon  = ResourceIcon.get(R.drawable.ic_qs_minus);
+                state.state = Tile.STATE_ACTIVE;
+                break;
+            case STATE_POWERSAVE:
+                state.label = "Power Saving Mode";
+                state.icon  = ResourceIcon.get(R.drawable.ic_power_low);
+                state.state = Tile.STATE_ACTIVE;
+                break;
+            case STATE_MAX:
+            default:
+                state.label = "Max Performance Mode";
+                state.icon  = ResourceIcon.get(R.drawable.ic_device_thermostat_on);
+                state.state = Tile.STATE_ACTIVE;
+                break;
+        }
     }
 
     @Override
@@ -147,76 +162,65 @@ public class PerformanceTile extends QSTileImpl<BooleanState> {
         return VIEW_UNKNOWN;
     }
 
-    @Override
-    protected void handleUpdateState(BooleanState state, Object arg) {
-        switch (currentState) {
-            case STATE_ONE:
-                state.label = "Max Performance Mode";
-                state.icon = ResourceIcon.get(R.drawable.ic_device_thermostat_on);
-                state.state = Tile.STATE_ACTIVE;
-                break;
-            case STATE_TWO:
-                state.label = "Normal Performance Mode";
-                state.icon = ResourceIcon.get(R.drawable.ic_qs_minus);
-                state.state = Tile.STATE_ACTIVE;
-                break;
-            case STATE_THREE:
-                state.label = "Power Saving Mode";
-                state.icon = ResourceIcon.get(R.drawable.ic_power_low);
-                state.state = Tile.STATE_ACTIVE;
-                break;
+    /**
+     * Map the string prop ("stock"/"powersave"/"max") to our integer state.
+     * Invalid or missing values default to MAX.
+     */
+    private int mapPropToState(String mode) {
+        if (MODE_POWERSAVE.equals(mode)) return STATE_POWERSAVE;
+        if (MODE_MAX.equals(mode))       return STATE_MAX;
+        if (MODE_STOCK.equals(mode))     return STATE_STOCK;
+        // default to max on invalid
+        return STATE_MAX;
+    }
+
+    /**
+     * Map our integer state back to the string we store in the prop.
+     */
+    private String mapStateToProp(int state) {
+        switch (state) {
+            case STATE_POWERSAVE: return MODE_POWERSAVE;
+            case STATE_MAX:       return MODE_MAX;
+            case STATE_STOCK:
+            default:              return MODE_STOCK;
         }
     }
 
-    private String sendShellCommand(String command) {
-        StringBuilder output = new StringBuilder();
-        Process process = null;
-        BufferedReader reader = null;
-
-        try {
-            process = Runtime.getRuntime().exec(command); // Execute the command
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line);
-            }
-
-            process.waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (process != null) {
-                process.destroy();
-            }
+    /**
+     * Write the current state into the system property.
+     */
+    private void applyState(int state) {
+        String mode = mapStateToProp(state);
+        SystemProperties.set(PROP_PERF_MODE, mode);
+        if (Log.isLoggable("PerformanceTile", Log.DEBUG)) {
+            Log.d("PerformanceTile", "Applied performance mode: " + mode);
         }
-
-        return output.toString();
     }
 
+    /** Receiver to re-sync on screen-off and boot. */
     private final class Receiver extends BroadcastReceiver {
-        public void init() {
-            // Register for Intent broadcasts for...
+        void init() {
             IntentFilter filter = new IntentFilter();
             filter.addAction(Intent.ACTION_SCREEN_OFF);
+            filter.addAction(Intent.ACTION_BOOT_COMPLETED);
             mContext.registerReceiver(this, filter, null, mHandler);
         }
 
-        public void destroy() {
+        void destroy() {
             mContext.unregisterReceiver(this);
         }
 
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if (Intent.ACTION_SCREEN_OFF.equals(action)) {
+            if (Intent.ACTION_SCREEN_OFF.equals(action)
+             || Intent.ACTION_BOOT_COMPLETED.equals(action)) {
+                // Re-read the prop in case it was changed elsewhere
+                currentState = mapPropToState(
+                        SystemProperties.get(PROP_PERF_MODE, MODE_MAX)
+                );
+                // Re-apply it just to be safe, and update UI
+                applyState(currentState);
                 refreshState();
             }
         }
