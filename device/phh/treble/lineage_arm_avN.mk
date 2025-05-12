@@ -13,7 +13,7 @@ PRODUCT_SYSTEM_BRAND := google
 PRODUCT_MODEL := TrebleDroid vanilla
 
 # Overwrite the inherited "emulator" characteristics
-PRODUCT_CHARACTERISTICS := device
+PRODUCT_CHARACTERISTICS := tablet
 
 PRODUCT_PACKAGES += 
 

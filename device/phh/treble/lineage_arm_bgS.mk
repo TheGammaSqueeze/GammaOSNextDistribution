@@ -13,7 +13,7 @@ PRODUCT_SYSTEM_BRAND := google
 PRODUCT_MODEL := TrebleDroid with GApps
 
 # Overwrite the inherited "emulator" characteristics
-PRODUCT_CHARACTERISTICS := device
+PRODUCT_CHARACTERISTICS := tablet
 
 PRODUCT_PACKAGES +=  phh-su me.phh.superuser su
 

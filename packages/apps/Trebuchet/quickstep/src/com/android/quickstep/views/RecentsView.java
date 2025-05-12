@@ -3821,9 +3821,8 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
         boolean isCurrentSplit = getCurrentPageTaskView() instanceof GroupedTaskView;
         mActionsView.updateHiddenFlags(HIDDEN_SPLIT_SCREEN, isCurrentSplit);
         mActionsView.updateHiddenFlags(HIDDEN_SPLIT_SELECT_ACTIVE, isSplitSelectionActive());
-        mActionsView.updateSplitButtonHiddenFlags(FLAG_IS_NOT_TABLET,
-                !mActivity.getDeviceProfile().isTablet ||
-                getContext().getSystemService(ActivityManager.class).isLowRamDevice());
+        // always hide the split-screen action
+        mActionsView.updateSplitButtonHiddenFlags(FLAG_IS_NOT_TABLET, /* hidden= */ true);
         mActionsView.updateSplitButtonDisabledFlags(FLAG_SINGLE_TASK, /*enable=*/ false);
         if (DESKTOP_MODE_SUPPORTED) {
             boolean isCurrentDesktop = getCurrentPageTaskView() instanceof DesktopTaskView;
@@ -5688,9 +5687,7 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
 
     /** Returns {@code true} if the overview tasks are displayed as a grid. */
     public boolean showAsGrid() {
-        return mOverviewGridEnabled || (mCurrentGestureEndTarget != null
-                && mSizeStrategy.stateFromGestureEndTarget(
-                mCurrentGestureEndTarget).displayOverviewTasksAsGrid(mActivity.getDeviceProfile()));
+        return false;
     }
 
     private boolean showAsFullscreen() {

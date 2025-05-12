@@ -2457,7 +2457,7 @@ public class DisplayPolicy {
                 || mDisplayContent.getInsetsPolicy().remoteInsetsControllerControlsSystemBars(win);
         mDisplayContent.getInsetsPolicy().updateBarControlTarget(win);
 
-        final boolean topAppHidesStatusBar = topAppHidesStatusBar();
+        final boolean topAppHidesStatusBar = true;
         if (getStatusBar() != null) {
             final StatusBarManagerInternal statusBar = getStatusBarManagerInternal();
             if (statusBar != null) {
@@ -2474,7 +2474,7 @@ public class DisplayPolicy {
         appearance = configureNavBarOpacity(appearance, adjacentTasksVisible,
                 freeformRootTaskVisible);
 
-        final boolean requestHideNavBar = !win.getRequestedVisibility(ITYPE_NAVIGATION_BAR);
+        final boolean requestHideNavBar = true;
         final long now = SystemClock.uptimeMillis();
         final boolean pendingPanic = mPendingPanicGestureUptime != 0
                 && now - mPendingPanicGestureUptime <= PANIC_GESTURE_EXPIRATION;

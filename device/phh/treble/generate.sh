@@ -93,7 +93,7 @@ PRODUCT_SYSTEM_BRAND := google
 PRODUCT_MODEL := TrebleDroid $apps_name
 
 # Overwrite the inherited "emulator" characteristics
-PRODUCT_CHARACTERISTICS := device
+PRODUCT_CHARACTERISTICS := tablet
 
 PRODUCT_PACKAGES += $extra_packages
 
