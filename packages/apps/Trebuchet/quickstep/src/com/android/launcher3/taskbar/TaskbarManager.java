@@ -294,7 +294,16 @@ public class TaskbarManager {
      */
     public void onUserUnlocked() {
         mUserUnlocked = true;
-        recreateTaskbar();
+        // Don’t build the Taskbar until the user setup is actually finished.
+        // Settings.Secure.USER_SETUP_COMPLETE is 1 once Setup Wizard has run.
+        boolean userSetupDone = Settings.Secure.getInt(
+                mContext.getContentResolver(),
+                Settings.Secure.USER_SETUP_COMPLETE,
+                0 /* default: not done */
+        ) != 0;
+        if (userSetupDone) {
+            recreateTaskbar();
+        }
     }
 
     /**
@@ -366,12 +375,24 @@ public class TaskbarManager {
     /**
      * This method is called multiple times (ex. initial init, then when user unlocks) in which case
      * we fully want to destroy an existing taskbar and create a new one.
-     * In other case (folding/unfolding) we don't need to remove and add window.
+     * In other cases (folding/unfolding) we don't need to remove and add window.
      */
     @VisibleForTesting
     public void recreateTaskbar() {
-        DeviceProfile dp = mUserUnlocked ?
-                LauncherAppState.getIDP(mContext).getDeviceProfile(mContext) : null;
+        // ── Skip until Android’s Setup Wizard has fully finished ─────────────
+        int setupComplete = Settings.Secure.getInt(
+                mContext.getContentResolver(),
+                Settings.Secure.USER_SETUP_COMPLETE,
+                0  // default is “not complete”
+        );
+        if (setupComplete == 0) {
+            Log.d(TAG, "recreateTaskbar: skipping until setup complete");
+            return;
+        }
+
+        DeviceProfile dp = mUserUnlocked
+                ? LauncherAppState.getIDP(mContext).getDeviceProfile(mContext)
+                : null;
 
         destroyExistingTaskbar();
 
@@ -379,7 +400,7 @@ public class TaskbarManager {
         SystemUiProxy sysui = SystemUiProxy.INSTANCE.get(mContext);
         sysui.setTaskbarEnabled(isTaskbarEnabled);
         debugWhyTaskbarNotDestroyed("recreateTaskbar: isTaskbarEnabled=" + isTaskbarEnabled
-                + " [dp != null (i.e. mUserUnlocked)]=" + (dp != null)
+                + " [dp != null]=" + (dp != null)
                 + " FLAG_HIDE_NAVBAR_WINDOW=" + FLAG_HIDE_NAVBAR_WINDOW
                 + " dp.isTaskbarPresent=" + (dp == null ? "null" : dp.isTaskbarPresent));
         if (!isTaskbarEnabled) {
@@ -388,8 +409,8 @@ public class TaskbarManager {
         }
 
         if (mTaskbarActivityContext == null) {
-            mTaskbarActivityContext = new TaskbarActivityContext(mContext, dp, mNavButtonController,
-                    mUnfoldProgressProvider);
+            mTaskbarActivityContext = new TaskbarActivityContext(
+                    mContext, dp, mNavButtonController, mUnfoldProgressProvider);
         } else {
             mTaskbarActivityContext.updateDeviceProfile(dp, mNavMode);
         }
