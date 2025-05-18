@@ -445,6 +445,30 @@ public class TaskbarView extends FrameLayout implements FolderIcon.FolderIconPar
         if (!sTmpRect.equals(mIconLayoutBounds)) {
             mControllerCallbacks.notifyIconLayoutBoundsChanged();
         }
+
+        View allApps = findViewById(R.id.all_apps_button);
+        if (allApps != null) {
+            int aw = allApps.getMeasuredWidth();
+            int ah = allApps.getMeasuredHeight();
+            // top and bottom remain the same as originally laid out
+            int aTop = allApps.getTop();
+            int aBottom = allApps.getBottom();
+            // left edge = left + 4px
+            int aLeft = left + 4;
+            allApps.layout(aLeft, aTop, aLeft + aw, aBottom);
+        }
+
+        // 2) Center the navigation buttons group (Back/Home/Recents)
+        View navGroup = findViewById(R.id.end_nav_buttons);
+        if (navGroup != null) {
+            int nw = navGroup.getMeasuredWidth();
+            int nTop = navGroup.getTop();
+            int nBottom = navGroup.getBottom();
+            // compute center position within [left..right]
+            int parentWidth = right - left;
+            int nLeft = left + (parentWidth - nw) / 2;
+            navGroup.layout(nLeft, nTop, nLeft + nw, nBottom);
+        }
     }
 
     @Override

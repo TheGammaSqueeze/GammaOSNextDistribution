@@ -303,6 +303,10 @@ public class DeviceProfile {
                 LineageSettings.System.ENABLE_TASKBAR, isTablet ? 1 : 0) == 1;
         isTaskbarPresent = isTaskBarEnabled && ApiWrapper.TASKBAR_DRAWN_IN_PROCESS;
 
+        // Force “taskbar mode” everywhere, no matter what the settings say
+        isTaskbarPresent = true;
+        isTaskbarPresentInApps = true;
+
         // Some more constants.
         context = getContext(context, info, isVerticalBarLayout() || (isTablet && isLandscape)
                         ? Configuration.ORIENTATION_LANDSCAPE

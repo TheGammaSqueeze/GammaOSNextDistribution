@@ -19,6 +19,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="@dimen/taskbar_icon_min_touch_size"
     android:layout_height="@dimen/taskbar_icon_min_touch_size"
+    android:layout_marginStart="4dp"
+    android:id="@+id/all_apps_button"
+    android:layout_gravity="start|center_vertical"
     android:contentDescription="@string/all_apps_button_label"
     android:backgroundTint="@android:color/transparent"
     />

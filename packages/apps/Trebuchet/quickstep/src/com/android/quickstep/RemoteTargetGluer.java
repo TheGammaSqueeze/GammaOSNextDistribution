@@ -107,8 +107,7 @@ public class RemoteTargetGluer {
      * the left/top task, index 1 right/bottom.
      */
     public RemoteTargetHandle[] assignTargetsForSplitScreen(RemoteAnimationTargets targets) {
-        // If we don't actually have two handles *or* fewer than 2 app-targets, just do the normal path.
-        if (mRemoteTargetHandles.length < 2 || targets.apps.length < 2) {
+        if (mRemoteTargetHandles.length == 1) {
             // If we're not in split screen, the splitIds count doesn't really matter since we
             // should always hit this case.
             mRemoteTargetHandles[0].mTransformParams.setTargetSet(targets);
@@ -116,7 +115,6 @@ public class RemoteTargetGluer {
                 // Unclear why/when target.apps length == 0, but it sure does happen :(
                 mRemoteTargetHandles[0].mTaskViewSimulator.setPreview(targets.apps[0], null);
             }
-            return mRemoteTargetHandles;
         } else {
             RemoteAnimationTarget topLeftTarget = targets.apps[0];
 
@@ -134,11 +132,6 @@ public class RemoteTargetGluer {
                     bottomRightTarget = target;
                     break;
                 }
-            }
-
-            // If we never found a true bottomRightTarget, fall back to single-target path
-            if (bottomRightTarget == null) {
-                return assignTargets(targets);
             }
 
             // remoteTargetHandle[0] denotes topLeft task, so we pass in the bottomRight to exclude,
