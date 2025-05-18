@@ -814,7 +814,7 @@ public class NavbarButtonsViewController implements TaskbarControllers.LoggableT
             // Add spacing after the end of the last nav button
             FrameLayout.LayoutParams navButtonParams =
                     (FrameLayout.LayoutParams) mNavButtonContainer.getLayoutParams();
-            navButtonParams.gravity = Gravity.END;
+            navButtonParams.gravity = Gravity.CENTER_HORIZONTAL;
             navButtonParams.width = FrameLayout.LayoutParams.WRAP_CONTENT;
             navButtonParams.height = MATCH_PARENT;
 

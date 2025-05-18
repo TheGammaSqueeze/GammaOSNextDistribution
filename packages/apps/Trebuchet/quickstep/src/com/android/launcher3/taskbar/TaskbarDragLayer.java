@@ -31,6 +31,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.android.launcher3.AbstractFloatingView;
+import com.android.launcher3.R;
 import com.android.launcher3.testing.TestLogging;
 import com.android.launcher3.testing.shared.TestProtocol;
 import com.android.launcher3.views.BaseDragLayer;
@@ -199,5 +200,41 @@ public class TaskbarDragLayer extends BaseDragLayer<TaskbarActivityContext> {
             }
         }
         return super.dispatchKeyEvent(event);
+    }
+    
+    /**
+     * After the system lays out the TaskbarView and its children,
+     * recenter the nav‐buttons and push the All-Apps icon 4px in from the left.
+     */
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+
+        // 1) Position “all apps” button at 4 dp from the left (if needed)
+        View allApps = findViewById(R.id.all_apps_button);
+        if (allApps != null) {
+            int marginPx = (int) (getResources().getDisplayMetrics().density * 4);
+            int newLeft = left + marginPx;
+            allApps.layout(
+                newLeft,
+                allApps.getTop(),
+                newLeft + allApps.getMeasuredWidth(),
+                allApps.getBottom()
+            );
+        }
+
+        // 2) Center the nav-buttons group
+        View endNav = findViewById(R.id.end_nav_buttons);
+        if (endNav != null) {
+            int parentWidth = right - left;
+            int childWidth  = endNav.getMeasuredWidth();
+            int newLeft     = left + (parentWidth - childWidth) / 2;
+            endNav.layout(
+                newLeft,
+                endNav.getTop(),
+                newLeft + childWidth,
+                endNav.getBottom()
+            );
+        }
     }
 }
