@@ -4056,7 +4056,7 @@ public class ActivityManager {
         final int density = res.getDisplayMetrics().densityDpi;
         final int sw = res.getConfiguration().smallestScreenWidthDp;
 
-        if (sw < 480) {
+        if (sw < 479) {
             // Smaller than approx 7" tablets, use the regular icon size.
             return density;
         }
@@ -4096,7 +4096,7 @@ public class ActivityManager {
         final int size = res.getDimensionPixelSize(android.R.dimen.app_icon_size);
         final int sw = res.getConfiguration().smallestScreenWidthDp;
 
-        if (sw < 480) {
+        if (sw < 479) {
             // Smaller than approx 7" tablets, use the regular icon size.
             return size;
         }

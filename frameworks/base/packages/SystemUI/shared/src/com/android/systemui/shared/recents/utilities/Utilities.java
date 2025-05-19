@@ -35,7 +35,7 @@ import android.view.WindowManager;
 /* Common code */
 public class Utilities {
 
-    private static final float TABLET_MIN_DPS = 480;
+    private static final float TABLET_MIN_DPS = 320;
 
     /**
      * Posts a runnable on a handler at the front of the queue ignoring any sync barriers.
@@ -148,6 +148,6 @@ public class Utilities {
 
     public static float dpiFromPx(float size, int densityDpi) {
         float densityRatio = (float) densityDpi / DisplayMetrics.DENSITY_DEFAULT;
-        return (size / densityRatio);
+        return 600.00f;
     }
 }

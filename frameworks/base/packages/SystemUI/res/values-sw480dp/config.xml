@@ -21,7 +21,7 @@
      for different hardware and product builds. -->
 <resources>
     <!-- The maximum number of rows in the QuickSettings -->
-    <integer name="quick_settings_max_rows">3</integer>
+    <integer name="quick_settings_max_rows">2</integer>
 
     <!-- Use collapsed layout for media player in landscape QQS -->
     <bool name="config_quickSettingsMediaLandscapeCollapsed">false</bool>
@@ -36,7 +36,7 @@
     <integer name="qs_security_footer_maxLines">1</integer>
 
     <bool name="config_use_large_screen_shade_header">true</bool>
-
+    <bool name="config_use_split_notification_shade">false</bool>
     <!-- A collection of defaults for the quick affordances on the lock screen. Each item must be a
     string with two parts: the ID of the slot and the comma-delimited list of affordance IDs,
     separated by a colon ':' character. For example: <item>bottom_end:home,wallet</item>. The

@@ -442,7 +442,7 @@ public final class Utilities {
 
     public static float dpiFromPx(float size, int densityDpi) {
         float densityRatio = (float) densityDpi / DisplayMetrics.DENSITY_DEFAULT;
-        return (size / densityRatio);
+        return 600.00f;
     }
 
     /** Converts a dp value to pixels for the current device. */
