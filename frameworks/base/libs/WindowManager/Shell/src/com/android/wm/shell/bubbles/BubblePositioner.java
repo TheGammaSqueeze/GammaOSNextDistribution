@@ -119,7 +119,7 @@ public class BubblePositioner {
 
         final Rect bounds = windowMetrics.getBounds();
         Configuration config = mContext.getResources().getConfiguration();
-        mIsLargeScreen = config.smallestScreenWidthDp >= 600;
+        mIsLargeScreen = config.smallestScreenWidthDp >= 480;
         if (mIsLargeScreen) {
             float largestEdgeDp = Math.max(config.screenWidthDp, config.screenHeightDp);
             mIsSmallTablet = largestEdgeDp < 960;

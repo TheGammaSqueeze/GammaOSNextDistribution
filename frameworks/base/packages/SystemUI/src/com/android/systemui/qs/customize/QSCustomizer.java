@@ -105,7 +105,7 @@ public class QSCustomizer extends LinearLayout {
     }
 
     void updateNavBackDrop(Configuration newConfig, LightBarController lightBarController) {
-        mIsShowingNavBackdrop = newConfig.smallestScreenWidthDp >= 600
+        mIsShowingNavBackdrop = newConfig.smallestScreenWidthDp >= 480
                 || newConfig.orientation != Configuration.ORIENTATION_LANDSCAPE;
         updateNavColors(lightBarController);
     }

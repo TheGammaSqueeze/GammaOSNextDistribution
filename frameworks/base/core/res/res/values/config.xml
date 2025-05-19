@@ -3935,7 +3935,7 @@
     <bool name="config_supportsMultiWindow">true</bool>
 
     <!-- True if the device supports split screen as a form of multi-window. -->
-    <bool name="config_supportsSplitScreenMultiWindow">true</bool>
+    <bool name="config_supportsSplitScreenMultiWindow">false</bool>
 
     <!-- Whether the device supports non-resizable activity in multi windowing modes.
          -1: The device doesn't support non-resizable in multi windowing modes.
@@ -3978,7 +3978,7 @@
     <!-- If the display smallest screen width is greater or equal to this value, we will treat it
          as a large screen device, which will have some multi window features enabled by default.
     -->
-    <integer name="config_largeScreenSmallestScreenWidthDp">600</integer>
+    <integer name="config_largeScreenSmallestScreenWidthDp">480</integer>
 
     <!-- True if the device is using legacy split. -->
     <bool name="config_useLegacySplit">false</bool>

@@ -32,7 +32,7 @@ TEST(ResourceTableTest, generateVersionedResources) {
 
     ConfigDescription sw600dpLandConfig = {};
     sw600dpLandConfig.orientation = ResTable_config::ORIENTATION_LAND;
-    sw600dpLandConfig.smallestScreenWidthDp = 600;
+    sw600dpLandConfig.smallestScreenWidthDp = 480;
 
     configs->addEntry(defaultConfig, new ResourceTable::Entry(String16(), SourcePos()));
     configs->addEntry(landConfig, new ResourceTable::Entry(String16(), SourcePos()));
@@ -51,7 +51,7 @@ TEST(ResourceTableTest, generateVersionedResourceWhenHigherVersionExists) {
     v21Config.sdkVersion = 21;
 
     ConfigDescription sw600dpV13Config = {};
-    sw600dpV13Config.smallestScreenWidthDp = 600;
+    sw600dpV13Config.smallestScreenWidthDp = 480;
     sw600dpV13Config.sdkVersion = 13;
 
     configs->addEntry(defaultConfig, new ResourceTable::Entry(String16(), SourcePos()));

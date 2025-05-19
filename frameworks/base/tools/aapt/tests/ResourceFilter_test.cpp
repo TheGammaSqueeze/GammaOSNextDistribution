@@ -104,7 +104,7 @@ TEST(WeakResourceFilterTest, DoesNotMatchWhenOneQualifierIsExplicitlyNotMatched)
     ConfigDescription config;
     config.language[0] = 'f';
     config.language[1] = 'r';
-    config.smallestScreenWidthDp = 600;
+    config.smallestScreenWidthDp = 480;
     config.version = 13;
 
     EXPECT_FALSE(filter.match(config));
@@ -144,7 +144,7 @@ TEST(WeakResourceFilterTest, IgnoresVersion) {
     ASSERT_EQ(NO_ERROR, filter.parse(String8("normal-v4")));
 
     ConfigDescription config;
-    config.smallestScreenWidthDp = 600;
+    config.smallestScreenWidthDp = 480;
     config.version = 13;
 
     // The configs don't match on any axis besides version, which should be ignored.

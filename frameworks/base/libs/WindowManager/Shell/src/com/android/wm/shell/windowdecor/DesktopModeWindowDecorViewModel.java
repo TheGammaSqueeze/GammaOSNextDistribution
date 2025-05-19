@@ -568,7 +568,7 @@ public class DesktopModeWindowDecorViewModel implements WindowDecorViewModel {
         return DesktopModeStatus.isProto2Enabled()
                 && taskInfo.getActivityType() == ACTIVITY_TYPE_STANDARD
                 && mDisplayController.getDisplayContext(taskInfo.displayId)
-                .getResources().getConfiguration().smallestScreenWidthDp >= 600;
+                .getResources().getConfiguration().smallestScreenWidthDp >= 480;
     }
 
     private void createWindowDecoration(

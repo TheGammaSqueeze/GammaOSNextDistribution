@@ -44,7 +44,7 @@ public class NavigationBar extends CustomBar {
     public NavigationBar(BridgeContext context, Density density, int orientation, boolean isRtl,
       boolean rtlEnabled, int simulatedPlatformVersion, boolean quickStepEnabled) {
         this(context, density, orientation, isRtl, rtlEnabled, simulatedPlatformVersion,
-          getShortestWidth(context)>= 600 ? LAYOUT_600DP_XML : LAYOUT_XML, quickStepEnabled);
+          getShortestWidth(context)>= 480 ? LAYOUT_600DP_XML : LAYOUT_XML, quickStepEnabled);
     }
 
     protected NavigationBar(BridgeContext context, Density density, int orientation, boolean isRtl,
@@ -92,7 +92,7 @@ public class NavigationBar extends CustomBar {
             View navButton = getChildAt(i);
             setSize(context, navButton, orientation, navButtonWidth);
         }
-        if (sw >= 600) {
+        if (sw >= 480) {
             setSize(context, getChildAt(2), orientation, 128);
             setSize(context, getChildAt(4), orientation, 128);
         }
@@ -120,7 +120,7 @@ public class NavigationBar extends CustomBar {
     }
 
     private static int getWidth(float sw) {
-        if (sw >= 600) {
+        if (sw >= 480) {
             return WIDTH_SW600;
         }
         if (sw >= 360) {

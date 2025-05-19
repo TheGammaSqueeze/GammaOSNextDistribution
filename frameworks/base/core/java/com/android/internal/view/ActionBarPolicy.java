@@ -54,7 +54,7 @@ public class ActionBarPolicy {
         final int width = config.screenWidthDp;
         final int height = config.screenHeightDp;
         final int smallest = config.smallestScreenWidthDp;
-        if (smallest > 600 || (width > 960 && height > 720) || (width > 720 && height > 960)) {
+        if (smallest > 480 || (width > 960 && height > 720) || (width > 720 && height > 960)) {
             // For values-w600dp, values-sw600dp and values-xlarge.
             return 5;
         } else if (width >= 500 || (width > 640 && height > 480) || (width > 480 && height > 640)) {

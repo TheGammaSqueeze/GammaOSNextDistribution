@@ -76,7 +76,7 @@ public class NearestTouchFrame extends FrameLayout {
     @VisibleForTesting
     NearestTouchFrame(Context context, AttributeSet attrs, Configuration c) {
         super(context, attrs);
-        mIsActive = c.smallestScreenWidthDp < 600;
+        mIsActive = c.smallestScreenWidthDp < 480;
         int[] attrsArray = new int[] {R.attr.isVertical};
         TypedArray ta = context.obtainStyledAttributes(attrs, attrsArray);
         mIsVertical = ta.getBoolean(0, false);

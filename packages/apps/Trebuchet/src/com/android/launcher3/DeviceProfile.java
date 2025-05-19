@@ -1013,6 +1013,12 @@ public class DeviceProfile {
      * This method calculates the space between the icons to achieve a certain width.
      */
     private int calculateHotseatBorderSpace(float hotseatWidthPx, int numExtraBorder) {
+        // Avoid div/0 when we only have 0 or 1 icon (or extra borders collapse the slots).
+        int denom = numShownHotseatIcons - 1 + numExtraBorder;
+        if (denom <= 0) {
+            // no room for spacing, just pack them with zero gutter
+            return 0;
+        }
         float hotseatIconsTotalPx = iconSizePx * numShownHotseatIcons;
         int hotseatBorderSpacePx =
                 (int) (hotseatWidthPx - hotseatIconsTotalPx)

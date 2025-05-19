@@ -394,7 +394,7 @@ public class ScreenPinningRequest implements View.OnClickListener,
 
         private int getRotation(Context context) {
             Configuration config = context.getResources().getConfiguration();
-            if (config.smallestScreenWidthDp >= 600) {
+            if (config.smallestScreenWidthDp >= 480) {
                 return ROTATION_NONE;
             }
 

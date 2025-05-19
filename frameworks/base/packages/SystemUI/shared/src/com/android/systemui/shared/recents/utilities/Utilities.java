@@ -35,7 +35,7 @@ import android.view.WindowManager;
 /* Common code */
 public class Utilities {
 
-    private static final float TABLET_MIN_DPS = 600;
+    private static final float TABLET_MIN_DPS = 480;
 
     /**
      * Posts a runnable on a handler at the front of the queue ignoring any sync barriers.
