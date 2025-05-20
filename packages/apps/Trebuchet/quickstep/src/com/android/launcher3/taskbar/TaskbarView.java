@@ -20,10 +20,14 @@ import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.Color;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -77,6 +81,23 @@ public class TaskbarView extends FrameLayout implements FolderIcon.FolderIconPar
     private TaskbarViewController.TaskbarViewCallbacks mControllerCallbacks;
     private View.OnClickListener mIconClickListener;
     private View.OnLongClickListener mIconLongClickListener;
+
+    /**
+     * Load a drawable, falling back to default density if the current density asset is missing.
+     * If still not found, return a transparent placeholder to avoid crashing.
+     */
+    private Drawable safeGetDrawable(Resources res, int id) {
+        try {
+            return res.getDrawable(id);
+        } catch (Resources.NotFoundException e) {
+            try {
+                return res.getDrawableForDensity(id, DisplayMetrics.DENSITY_DEFAULT);
+            } catch (Resources.NotFoundException e2) {
+                // Fallback to a transparent drawable to avoid crash.
+                return new ColorDrawable(Color.TRANSPARENT);
+            }
+        }
+    }
 
     // Only non-null when the corresponding Folder is open.
     private @Nullable FolderIcon mLeaveBehindFolderIcon;
@@ -144,9 +165,10 @@ public class TaskbarView extends FrameLayout implements FolderIcon.FolderIconPar
         if (!mActivityContext.getPackageManager().hasSystemFeature(FEATURE_PC)) {
             mAllAppsButton = (IconButtonView) LayoutInflater.from(context)
                     .inflate(R.layout.taskbar_all_apps_button, this, false);
-            mAllAppsButton.setIconDrawable(resources.getDrawable(isTransientTaskbar
-                    ? R.drawable.ic_transient_taskbar_all_apps_button
-                    : R.drawable.ic_taskbar_all_apps_button));
+            mAllAppsButton.setIconDrawable(safeGetDrawable(resources,
+                    isTransientTaskbar
+                            ? R.drawable.ic_transient_taskbar_all_apps_button
+                            : R.drawable.ic_taskbar_all_apps_button));
             mAllAppsButton.setScaleX(mIsRtl ? -1 : 1);
             mAllAppsButton.setPadding(mItemPadding, mItemPadding, mItemPadding, mItemPadding);
             mAllAppsButton.setForegroundTint(
