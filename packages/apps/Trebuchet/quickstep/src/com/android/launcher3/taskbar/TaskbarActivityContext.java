@@ -104,7 +104,7 @@ import com.android.systemui.shared.rotation.RotationButtonController;
 import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.unfold.updates.RotationChangeProvider;
 import com.android.systemui.unfold.util.ScopedUnfoldTransitionProgressProvider;
-import com.android.launcher3.taskbar.TaskbarManager;
+
 import java.io.PrintWriter;
 
 /**
@@ -184,10 +184,8 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
         mLeftCorner = display.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT);
         mRightCorner = display.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT);
 
-        // Inflate views: only use transient_taskbar when in gesture-nav *and* running in PC/Desktop mode
-        final boolean isDesktopMode = getPackageManager().hasSystemFeature(FEATURE_PC);
+        // Inflate views.
         int taskbarLayout = DisplayController.isTransientTaskbar(this)
-                && isDesktopMode
                 ? R.layout.transient_taskbar
                 : R.layout.taskbar;
         mDragLayer = (TaskbarDragLayer) mLayoutInflater.inflate(taskbarLayout, null, false);
@@ -198,7 +196,7 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
 
         mAccessibilityDelegate = new TaskbarShortcutMenuAccessibilityDelegate(this);
 
-        //final boolean isDesktopMode = getPackageManager().hasSystemFeature(FEATURE_PC);
+        final boolean isDesktopMode = getPackageManager().hasSystemFeature(FEATURE_PC);
 
         // Construct controllers.
         mControllers = new TaskbarControllers(this,

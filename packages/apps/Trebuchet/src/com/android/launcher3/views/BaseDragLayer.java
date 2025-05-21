@@ -557,29 +557,17 @@ public abstract class BaseDragLayer<T extends Context & ActivityContext>
                     ? insets.getInsets(WindowInsets.Type.ime())
                     : Insets.NONE;
             DeviceProfile dp = mActivity.getDeviceProfile();
-
-            // FORCE bottom inset to the taskbar height, regardless of actual nav/taskbar mode
-            int bottomInset = dp.taskbarHeight;
-
-            // adjust gesture region as before, but based on our forced bottomInset
-            gestureInsetBottom = Math.max(0, gestureInsetBottom - bottomInset);
+            if (dp.isTaskbarPresent) {
+                // Ignore taskbar gesture insets to avoid interfering with TouchControllers.
+                gestureInsetBottom = Math.max(0, gestureInsetBottom - dp.taskbarHeight);
+            }
             mSystemGestureRegion.set(
                     Math.max(gestureInsets.left, imeInset.left),
                     Math.max(gestureInsets.top, imeInset.top),
                     Math.max(gestureInsets.right, imeInset.right),
                     Math.max(gestureInsetBottom, imeInset.bottom)
             );
-
-            // replace the system window bottom inset so RecentsView.setInsets()
-            // always sees 'bottomInset'
-            insets = insets.replaceSystemWindowInsets(
-                    insets.getSystemWindowInsetLeft(),
-                    insets.getSystemWindowInsetTop(),
-                    insets.getSystemWindowInsetRight(),
-                    bottomInset
-            );
         }
-
         return super.dispatchApplyWindowInsets(insets);
     }
 }

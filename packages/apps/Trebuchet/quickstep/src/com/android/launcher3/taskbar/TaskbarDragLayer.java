@@ -201,7 +201,7 @@ public class TaskbarDragLayer extends BaseDragLayer<TaskbarActivityContext> {
         }
         return super.dispatchKeyEvent(event);
     }
-    
+
     /**
      * After the system lays out the TaskbarView and its children,
      * recenter the nav‐buttons and push the All-Apps icon 4px in from the left.

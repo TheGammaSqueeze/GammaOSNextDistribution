@@ -47,7 +47,7 @@
     <color name="popup_shade_first_light">#F9F9F9</color>
     <color name="popup_shade_second_light">#F1F1F1</color>
     <color name="popup_shade_third_light">#E2E2E2</color>
-    <color name="popup_shade_first_dark">#303030</color>
+    <color name="popup_shade_first_dark">#000000</color>
     <color name="popup_shade_second_dark">#262626</color>
     <color name="popup_shade_third_dark">#1B1B1B</color>
 

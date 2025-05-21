@@ -20,14 +20,10 @@ import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.Color;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -81,23 +77,6 @@ public class TaskbarView extends FrameLayout implements FolderIcon.FolderIconPar
     private TaskbarViewController.TaskbarViewCallbacks mControllerCallbacks;
     private View.OnClickListener mIconClickListener;
     private View.OnLongClickListener mIconLongClickListener;
-
-    /**
-     * Load a drawable, falling back to default density if the current density asset is missing.
-     * If still not found, return a transparent placeholder to avoid crashing.
-     */
-    private Drawable safeGetDrawable(Resources res, int id) {
-        try {
-            return res.getDrawable(id);
-        } catch (Resources.NotFoundException e) {
-            try {
-                return res.getDrawableForDensity(id, DisplayMetrics.DENSITY_DEFAULT);
-            } catch (Resources.NotFoundException e2) {
-                // Fallback to a transparent drawable to avoid crash.
-                return new ColorDrawable(Color.TRANSPARENT);
-            }
-        }
-    }
 
     // Only non-null when the corresponding Folder is open.
     private @Nullable FolderIcon mLeaveBehindFolderIcon;
@@ -165,10 +144,9 @@ public class TaskbarView extends FrameLayout implements FolderIcon.FolderIconPar
         if (!mActivityContext.getPackageManager().hasSystemFeature(FEATURE_PC)) {
             mAllAppsButton = (IconButtonView) LayoutInflater.from(context)
                     .inflate(R.layout.taskbar_all_apps_button, this, false);
-            mAllAppsButton.setIconDrawable(safeGetDrawable(resources,
-                    isTransientTaskbar
-                            ? R.drawable.ic_transient_taskbar_all_apps_button
-                            : R.drawable.ic_taskbar_all_apps_button));
+            mAllAppsButton.setIconDrawable(resources.getDrawable(isTransientTaskbar
+                    ? R.drawable.ic_transient_taskbar_all_apps_button
+                    : R.drawable.ic_taskbar_all_apps_button));
             mAllAppsButton.setScaleX(mIsRtl ? -1 : 1);
             mAllAppsButton.setPadding(mItemPadding, mItemPadding, mItemPadding, mItemPadding);
             mAllAppsButton.setForegroundTint(
@@ -468,28 +446,30 @@ public class TaskbarView extends FrameLayout implements FolderIcon.FolderIconPar
             mControllerCallbacks.notifyIconLayoutBoundsChanged();
         }
 
-        View allApps = findViewById(R.id.all_apps_button);
-        if (allApps != null) {
-            int aw = allApps.getMeasuredWidth();
-            int ah = allApps.getMeasuredHeight();
-            // top and bottom remain the same as originally laid out
-            int aTop = allApps.getTop();
-            int aBottom = allApps.getBottom();
-            // left edge = left + 4px
-            int aLeft = left + 4;
-            allApps.layout(aLeft, aTop, aLeft + aw, aBottom);
-        }
+        if (!mActivityContext.isGestureNav()) {
+            View allApps = findViewById(R.id.all_apps_button);
+            if (allApps != null) {
+                int aw = allApps.getMeasuredWidth();
+                int ah = allApps.getMeasuredHeight();
+                // top and bottom remain the same as originally laid out
+                int aTop = allApps.getTop();
+                int aBottom = allApps.getBottom();
+                // left edge = left + 4px
+                int aLeft = left + 4;
+                allApps.layout(aLeft, aTop, aLeft + aw, aBottom);
+            }
 
-        // 2) Center the navigation buttons group (Back/Home/Recents)
-        View navGroup = findViewById(R.id.end_nav_buttons);
-        if (navGroup != null) {
-            int nw = navGroup.getMeasuredWidth();
-            int nTop = navGroup.getTop();
-            int nBottom = navGroup.getBottom();
-            // compute center position within [left..right]
-            int parentWidth = right - left;
-            int nLeft = left + (parentWidth - nw) / 2;
-            navGroup.layout(nLeft, nTop, nLeft + nw, nBottom);
+            // 2) Center the navigation buttons group (Back/Home/Recents)
+            View navGroup = findViewById(R.id.end_nav_buttons);
+            if (navGroup != null) {
+                int nw = navGroup.getMeasuredWidth();
+                int nTop = navGroup.getTop();
+                int nBottom = navGroup.getBottom();
+                // compute center position within [left..right]
+                int parentWidth = right - left;
+                int nLeft = left + (parentWidth - nw) / 2;
+                navGroup.layout(nLeft, nTop, nLeft + nw, nBottom);
+            }
         }
     }
 

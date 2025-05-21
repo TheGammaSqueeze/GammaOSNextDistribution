@@ -228,6 +228,19 @@ public class TaskbarManager {
         mDispInfoChangeListener = (context, info, flags) -> {
             if ((flags & CHANGE_FLAGS) != 0) {
                 mNavMode = info.navigationMode;
+
+                // ────────────────────────────────────────────────────────
+                // If we’ve switched into pure-gesture nav, force-disable
+                // the Taskbar flag in Settings so it can’t come back on.
+                if (mNavMode == NavigationMode.NO_BUTTON) {
+                    LineageSettings.System.putInt(
+                        mContext.getContentResolver(),
+                        LineageSettings.System.ENABLE_TASKBAR,
+                        0
+                    );
+                }
+                // ────────────────────────────────────────────────────────
+
                 recreateTaskbar();
             }
             debugWhyTaskbarNotDestroyed("DisplayInfoChangeListener#"
@@ -294,16 +307,7 @@ public class TaskbarManager {
      */
     public void onUserUnlocked() {
         mUserUnlocked = true;
-        // Don’t build the Taskbar until the user setup is actually finished.
-        // Settings.Secure.USER_SETUP_COMPLETE is 1 once Setup Wizard has run.
-        boolean userSetupDone = Settings.Secure.getInt(
-                mContext.getContentResolver(),
-                Settings.Secure.USER_SETUP_COMPLETE,
-                0 /* default: not done */
-        ) != 0;
-        if (userSetupDone) {
-            recreateTaskbar();
-        }
+        recreateTaskbar();
     }
 
     /**
@@ -375,32 +379,29 @@ public class TaskbarManager {
     /**
      * This method is called multiple times (ex. initial init, then when user unlocks) in which case
      * we fully want to destroy an existing taskbar and create a new one.
-     * In other cases (folding/unfolding) we don't need to remove and add window.
+     * In other case (folding/unfolding) we don't need to remove and add window.
      */
     @VisibleForTesting
     public void recreateTaskbar() {
-        // ── Skip until Android’s Setup Wizard has fully finished ─────────────
-        int setupComplete = Settings.Secure.getInt(
-                mContext.getContentResolver(),
-                Settings.Secure.USER_SETUP_COMPLETE,
-                0  // default is “not complete”
-        );
-        if (setupComplete == 0) {
-            Log.d(TAG, "recreateTaskbar: skipping until setup complete");
-            return;
-        }
-
-        DeviceProfile dp = mUserUnlocked
-                ? LauncherAppState.getIDP(mContext).getDeviceProfile(mContext)
-                : null;
+        DeviceProfile dp = mUserUnlocked ?
+                LauncherAppState.getIDP(mContext).getDeviceProfile(mContext) : null;
 
         destroyExistingTaskbar();
+
+        // ───────────────────────────────────────────────────────────────────
+        // If the user is in gesture-nav (no buttons), skip taskbar entirely
+        // to avoid inflating TaskbarView when it isn’t supported.
+        if (mNavMode == NavigationMode.NO_BUTTON) {
+            Log.w(TAG, "Gesture navigation active; skipping Taskbar creation");
+            return;
+        }
+        // ───────────
 
         boolean isTaskbarEnabled = dp != null && isTaskbarPresent(dp);
         SystemUiProxy sysui = SystemUiProxy.INSTANCE.get(mContext);
         sysui.setTaskbarEnabled(isTaskbarEnabled);
         debugWhyTaskbarNotDestroyed("recreateTaskbar: isTaskbarEnabled=" + isTaskbarEnabled
-                + " [dp != null]=" + (dp != null)
+                + " [dp != null (i.e. mUserUnlocked)]=" + (dp != null)
                 + " FLAG_HIDE_NAVBAR_WINDOW=" + FLAG_HIDE_NAVBAR_WINDOW
                 + " dp.isTaskbarPresent=" + (dp == null ? "null" : dp.isTaskbarPresent));
         if (!isTaskbarEnabled) {
@@ -409,8 +410,8 @@ public class TaskbarManager {
         }
 
         if (mTaskbarActivityContext == null) {
-            mTaskbarActivityContext = new TaskbarActivityContext(
-                    mContext, dp, mNavButtonController, mUnfoldProgressProvider);
+            mTaskbarActivityContext = new TaskbarActivityContext(mContext, dp, mNavButtonController,
+                    mUnfoldProgressProvider);
         } else {
             mTaskbarActivityContext.updateDeviceProfile(dp, mNavMode);
         }

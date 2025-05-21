@@ -303,10 +303,6 @@ public class DeviceProfile {
                 LineageSettings.System.ENABLE_TASKBAR, isTablet ? 1 : 0) == 1;
         isTaskbarPresent = isTaskBarEnabled && ApiWrapper.TASKBAR_DRAWN_IN_PROCESS;
 
-        // Force “taskbar mode” everywhere, no matter what the settings say
-        isTaskbarPresent = true;
-        isTaskbarPresentInApps = true;
-
         // Some more constants.
         context = getContext(context, info, isVerticalBarLayout() || (isTablet && isLandscape)
                         ? Configuration.ORIENTATION_LANDSCAPE
@@ -1013,12 +1009,6 @@ public class DeviceProfile {
      * This method calculates the space between the icons to achieve a certain width.
      */
     private int calculateHotseatBorderSpace(float hotseatWidthPx, int numExtraBorder) {
-        // Avoid div/0 when we only have 0 or 1 icon (or extra borders collapse the slots).
-        int denom = numShownHotseatIcons - 1 + numExtraBorder;
-        if (denom <= 0) {
-            // no room for spacing, just pack them with zero gutter
-            return 0;
-        }
         float hotseatIconsTotalPx = iconSizePx * numShownHotseatIcons;
         int hotseatBorderSpacePx =
                 (int) (hotseatWidthPx - hotseatIconsTotalPx)
