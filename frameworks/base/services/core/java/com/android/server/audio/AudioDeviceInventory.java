@@ -607,6 +607,15 @@ public class AudioDeviceInventory {
                             AudioDeviceInventory.WiredDeviceConnectionState wdcs) {
         int type = wdcs.mAttributes.getInternalType();
 
+        // Samsung (and some other kernels) split their USB-C dongle into two masks:
+        if (type == 0x82000000 /* DEVICE_OUT_USB_HEADSET2 */) {
+            // treat it exactly like the normal USB-C headset
+            type = AudioSystem.DEVICE_OUT_USB_HEADSET;
+        }
+        if (type == 0x02000000 /* hypothetical DEVICE_IN_USB_HEADSET2 */) {
+            type = AudioSystem.DEVICE_IN_USB_HEADSET;
+        }
+
         AudioService.sDeviceLogger.log(new AudioServiceEvents.WiredDevConnectEvent(wdcs));
 
         MediaMetrics.Item mmi = new MediaMetrics.Item(mMetricsId
