@@ -3848,7 +3848,7 @@
 
     <!-- Controls whether the navbar needs a scrim with
          {@link Window#setEnsuringNavigationBarContrastWhenTransparent}. -->
-    <bool name="config_navBarNeedsScrim">false</bool>
+    <bool name="config_navBarNeedsScrim">true</bool>
 
     <!-- Controls whether seamless rotation should be allowed even though the navbar can move
          (which normally prevents seamless rotation). -->

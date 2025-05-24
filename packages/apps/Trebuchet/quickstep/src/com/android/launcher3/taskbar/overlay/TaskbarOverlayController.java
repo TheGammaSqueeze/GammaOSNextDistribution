@@ -173,6 +173,12 @@ public final class TaskbarOverlayController {
         layoutParams.setFitInsetsTypes(0); // Handled by container view.
         layoutParams.layoutInDisplayCutoutMode = LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
         layoutParams.setSystemApplicationOverlay(true);
+        
+        // ──> Enable blur‐behind and set a 50 dp blur radius
+        layoutParams.flags |= LayoutParams.FLAG_BLUR_BEHIND;
+        float density = mWindowContext.getResources().getDisplayMetrics().density;
+        int blurPx = Math.round(50 * density);
+        layoutParams.setBlurBehindRadius(blurPx);
         return layoutParams;
     }
 
