@@ -18,4 +18,13 @@
     <!-- Notifications are sized to match the width of two (of 4) qs tiles in landscape. -->
     <bool name="config_skinnyNotifsInLandscape">false</bool>
     <bool name="config_use_split_notification_shade">false</bool>
+    
+    <!-- The maximum number of rows in the QSPanel -->
+    <integer name="quick_settings_max_rows">3</integer>
+
+    <!-- The maximum number of rows in the QuickQSPanel -->
+    <integer name="quick_qs_panel_max_rows">2</integer>
+
+    <!-- The maximum number of tiles in the QuickQSPanel -->
+    <integer name="quick_qs_panel_max_tiles">6</integer>
 </resources>
