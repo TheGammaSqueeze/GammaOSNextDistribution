@@ -320,7 +320,7 @@ public final class FeatureFlags {
                     + " to have better visuals, improve contrast, and color");
 
     public static final BooleanFlag FORCE_PERSISTENT_TASKBAR = getDebugFlag(270395077,
-            "FORCE_PERSISTENT_TASKBAR", false, "Forces taskbar to be persistent, even in gesture"
+            "FORCE_PERSISTENT_TASKBAR", true, "Forces taskbar to be persistent, even in gesture"
                     + " nav mode and when transient taskbar is enabled.");
 
     public static final BooleanFlag FOLDABLE_SINGLE_PAGE = getDebugFlag(270395274,
@@ -328,7 +328,7 @@ public final class FeatureFlags {
             "Use a single page for the workspace");
 
     public static final BooleanFlag ENABLE_TRANSIENT_TASKBAR = getDebugFlag(270395798,
-            "ENABLE_TRANSIENT_TASKBAR", true, "Enables transient taskbar.");
+            "ENABLE_TRANSIENT_TASKBAR", false, "Enables transient taskbar.");
 
     public static final BooleanFlag SECONDARY_DRAG_N_DROP_TO_PIN = getDebugFlag(270395140,
             "SECONDARY_DRAG_N_DROP_TO_PIN", false,

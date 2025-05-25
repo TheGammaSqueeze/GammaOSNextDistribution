@@ -257,15 +257,20 @@ public class TaskbarStashController implements TaskbarControllers.LoggableTaskba
     private final Alarm mTimeoutAlarm = new Alarm();
     private boolean mEnableBlockingTimeoutDuringTests = false;
 
-    // Evaluate whether the handle should be stashed
+    // // Evaluate whether the handle should be stashed
+    // private final StatePropertyHolder mStatePropertyHolder = new StatePropertyHolder(
+            // flags -> {
+                // boolean inApp = hasAnyFlag(flags, FLAGS_IN_APP);
+                // boolean stashedInApp = hasAnyFlag(flags, FLAGS_STASHED_IN_APP);
+                // boolean stashedLauncherState = hasAnyFlag(flags, FLAG_IN_STASHED_LAUNCHER_STATE);
+                // boolean forceStashed = hasAnyFlag(flags, FLAGS_FORCE_STASHED);
+                // return (inApp && stashedInApp) || (!inApp && stashedLauncherState) || forceStashed;
+            // });
+
+    // Disable *all* stashing: always keep the taskbar visible
     private final StatePropertyHolder mStatePropertyHolder = new StatePropertyHolder(
-            flags -> {
-                boolean inApp = hasAnyFlag(flags, FLAGS_IN_APP);
-                boolean stashedInApp = hasAnyFlag(flags, FLAGS_STASHED_IN_APP);
-                boolean stashedLauncherState = hasAnyFlag(flags, FLAG_IN_STASHED_LAUNCHER_STATE);
-                boolean forceStashed = hasAnyFlag(flags, FLAGS_FORCE_STASHED);
-                return (inApp && stashedInApp) || (!inApp && stashedLauncherState) || forceStashed;
-            });
+            flags -> false
+    );
 
     private boolean mIsTaskbarSystemActionRegistered = false;
     private TaskbarSharedState mTaskbarSharedState;
@@ -328,11 +333,11 @@ public class TaskbarStashController implements TaskbarControllers.LoggableTaskba
                 && mPrefs.getBoolean(SHARED_PREFS_STASHED_KEY, DEFAULT_STASHED_PREF);
         boolean isInSetup = !mActivity.isUserSetupComplete() || setupUIVisible;
         updateStateForFlag(FLAG_STASHED_IN_APP_MANUAL, isManuallyStashedInApp);
-        updateStateForFlag(FLAG_STASHED_IN_APP_AUTO, isTransientTaskbar);
+        updateStateForFlag(FLAG_STASHED_IN_APP_AUTO, false);
         updateStateForFlag(FLAG_STASHED_IN_APP_SETUP, isInSetup);
         updateStateForFlag(FLAG_IN_SETUP, isInSetup);
-        updateStateForFlag(FLAG_STASHED_SMALL_SCREEN, isPhoneMode()
-                && !mActivity.isThreeButtonNav());
+        //updateStateForFlag(FLAG_STASHED_SMALL_SCREEN, isPhoneMode()
+        //        && !mActivity.isThreeButtonNav());
         // For now, assume we're in an app, since LauncherTaskbarUIController won't be able to tell
         // us that we're paused until a bit later. This avoids flickering upon recreating taskbar.
         updateStateForFlag(FLAG_IN_APP, true);
@@ -514,28 +519,28 @@ public class TaskbarStashController implements TaskbarControllers.LoggableTaskba
      * Stash or unstashes the transient taskbar, using the default TASKBAR_STASH_DURATION.
      */
     public void updateAndAnimateTransientTaskbar(boolean stash) {
-        updateAndAnimateTransientTaskbar(stash, TASKBAR_STASH_DURATION);
+        //updateAndAnimateTransientTaskbar(stash, TASKBAR_STASH_DURATION);
     }
 
     /**
      * Stash or unstashes the transient taskbar.
      */
     public void updateAndAnimateTransientTaskbar(boolean stash, long duration) {
-        if (!DisplayController.isTransientTaskbar(mActivity)) {
-            return;
-        }
+        // if (!DisplayController.isTransientTaskbar(mActivity)) {
+            // return;
+        // }
 
-        if (stash && mControllers.taskbarAutohideSuspendController.isSuspended()
-                && !mControllers.taskbarAutohideSuspendController
-                .isSuspendedForTransientTaskbarInOverview()) {
-            // Avoid stashing if autohide is currently suspended.
-            return;
-        }
+        // if (stash && mControllers.taskbarAutohideSuspendController.isSuspended()
+                // && !mControllers.taskbarAutohideSuspendController
+                // .isSuspendedForTransientTaskbarInOverview()) {
+            // // Avoid stashing if autohide is currently suspended.
+            // return;
+        // }
 
-        if (hasAnyFlag(FLAG_STASHED_IN_APP_AUTO) != stash) {
-            updateStateForFlag(FLAG_STASHED_IN_APP_AUTO, stash);
-            applyState();
-        }
+        // if (hasAnyFlag(FLAG_STASHED_IN_APP_AUTO) != stash) {
+            // updateStateForFlag(FLAG_STASHED_IN_APP_AUTO, stash);
+            // applyState();
+        // }
     }
 
     /**
