@@ -82,11 +82,17 @@ public class TaskbarUIController {
      */
     protected void onIconLayoutBoundsChanged() { }
 
-    /** Called when an icon is launched. */
+    /**  
+     * Called when an icon is launched.  
+     */
     @CallSuper
     public void onTaskbarIconLaunched(ItemInfo item) {
-        // When launching from Taskbar, e.g. from Overview, set FLAG_IN_APP immediately instead of
-        // waiting for onPause, to reduce potential visual noise during the app open transition.
+        // guard against the default controller never having been init()'d
+        if (mControllers == null || mControllers.taskbarStashController == null) {
+            return;
+        }
+        // When launching from Taskbar, e.g. from Overview or All-Apps,
+        // immediately mark “in-app” so we don’t try to stash on launch.
         mControllers.taskbarStashController.updateStateForFlag(FLAG_IN_APP, true);
         mControllers.taskbarStashController.applyState();
     }

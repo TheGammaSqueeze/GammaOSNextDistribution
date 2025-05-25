@@ -882,16 +882,31 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
         } else if (tag instanceof AppInfo) {
             // Tapping an item in AllApps
             AppInfo info = (AppInfo) tag;
-            TaskbarUIController taskbarUIController = mControllers.uiController;
-            RecentsView recents = taskbarUIController.getRecentsView();
-            if (recents != null
-                    && taskbarUIController.getRecentsView().isSplitSelectionActive()) {
+            TaskbarUIController ui = mControllers.uiController;
+            RecentsView recents = ui.getRecentsView();
+
+            if (recents != null && recents.isSplitSelectionActive()) {
                 // If we are selecting a second app for split, launch the split tasks
-                taskbarUIController.triggerSecondAppForSplit(info, info.intent, view);
-            } else {
+                ui.triggerSecondAppForSplit(info, info.intent, view);
+
+            } else if (recents != null) {
+                // We have a RecentsView, so let it handle split-preserving launch or normal launch
                 launchFromTaskbarPreservingSplitIfVisible(recents, info);
+
+            } else {
+                // No RecentsView yet (Quickstep hasn't run): just launch the app directly
+                Intent launch = new Intent(info.intent)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                try {
+                    startActivity(launch);
+                } catch (ActivityNotFoundException | SecurityException e) {
+                    Toast.makeText(this, R.string.activity_not_found, Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Unable to launch: " + info, e);
+                }
             }
-            mControllers.uiController.onTaskbarIconLaunched(info);
+
+            // Notify UI and auto-stash as before
+            ui.onTaskbarIconLaunched(info);
             mControllers.taskbarStashController.updateAndAnimateTransientTaskbar(true);
         } else if (tag instanceof ItemClickProxy) {
             ((ItemClickProxy) tag).onItemClicked(view);
