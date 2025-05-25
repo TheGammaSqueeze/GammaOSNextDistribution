@@ -334,38 +334,57 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
     public WindowManager.LayoutParams createDefaultWindowLayoutParams(int type, String title) {
         DeviceProfile deviceProfile = getDeviceProfile();
         // Taskbar is on the logical bottom of the screen
-        boolean isVerticalBarLayout = TaskbarManager.isPhoneMode(deviceProfile) &&
-                deviceProfile.isLandscape;
+        boolean isVerticalBarLayout = TaskbarManager.isPhoneMode(deviceProfile)
+                && deviceProfile.isLandscape;
 
+        // Base flags for our nav‐bar panel window
         int windowFlags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_SLIPPERY
                 | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH;
-        if (DisplayController.isTransientTaskbar(this) && !isRunningInTestHarness()) {
+
+        if (DisplayController.isTransientTaskbar(this)
+                && !isRunningInTestHarness()) {
             windowFlags |= WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                    | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+                         | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         }
-        WindowManager.LayoutParams windowLayoutParams = new WindowManager.LayoutParams(
-                isVerticalBarLayout ? mLastRequestedNonFullscreenHeight : MATCH_PARENT,
-                isVerticalBarLayout ? MATCH_PARENT : mLastRequestedNonFullscreenHeight,
-                type,
-                windowFlags,
-                PixelFormat.TRANSLUCENT);
+
+        // ───────────────────────────────────────────────────────────────────────────
+        // Make the system navigation bar behind us translucent so that
+        // SystemUI stops drawing its grey background under our panel.
+        windowFlags |= WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+        // ───────────────────────────────────────────────────────────────────────────
+
+        WindowManager.LayoutParams windowLayoutParams =
+                new WindowManager.LayoutParams(
+                        isVerticalBarLayout
+                                ? mLastRequestedNonFullscreenHeight
+                                : MATCH_PARENT,
+                        isVerticalBarLayout
+                                ? MATCH_PARENT
+                                : mLastRequestedNonFullscreenHeight,
+                        type,
+                        windowFlags,
+                        PixelFormat.TRANSLUCENT);
+
         windowLayoutParams.setTitle(title);
         windowLayoutParams.packageName = getPackageName();
-        windowLayoutParams.gravity = !isVerticalBarLayout ?
-                Gravity.BOTTOM :
-                Gravity.END; // TODO(b/230394142): seascape
+        windowLayoutParams.gravity = !isVerticalBarLayout
+                ? Gravity.BOTTOM
+                : Gravity.END; // TODO(b/230394142): seascape
 
         windowLayoutParams.setFitInsetsTypes(0);
         windowLayoutParams.receiveInsetsIgnoringZOrder = true;
-        windowLayoutParams.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING;
-        windowLayoutParams.layoutInDisplayCutoutMode = LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+        windowLayoutParams.softInputMode =
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING;
+        windowLayoutParams.layoutInDisplayCutoutMode =
+                LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
         windowLayoutParams.privateFlags =
                 WindowManager.LayoutParams.PRIVATE_FLAG_NO_MOVE_ANIMATION;
         windowLayoutParams.accessibilityTitle = getString(
                 TaskbarManager.isPhoneMode(mDeviceProfile)
                         ? R.string.taskbar_phone_a11y_title
                         : R.string.taskbar_a11y_title);
+
         return windowLayoutParams;
     }
 

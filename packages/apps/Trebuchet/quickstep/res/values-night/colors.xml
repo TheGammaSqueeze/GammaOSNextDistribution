@@ -26,4 +26,7 @@
 
     <!-- Turn on work apps button -->
     <color name="work_turn_on_stroke">?androidprv:attr/colorAccentSecondaryVariant</color>
+    
+    <!-- Black swipe-to-reveal transient taskbar -->
+    <color name="taskbar_transparent">#FF000000</color>
 </resources>

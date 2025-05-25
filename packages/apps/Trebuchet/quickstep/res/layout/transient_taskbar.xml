@@ -17,6 +17,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/taskbar_container"
+    android:background="@color/taskbar_bg_translucent"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:clipChildren="false">
@@ -31,6 +32,7 @@
         android:forceHasOverlappingRendering="false"
         android:layout_gravity="bottom"
         android:layout_marginBottom="@dimen/transient_taskbar_bottom_margin"
+        android:background="@color/taskbar_transparent"
         android:clipChildren="false" />
 
     <com.android.launcher3.taskbar.TaskbarScrimView

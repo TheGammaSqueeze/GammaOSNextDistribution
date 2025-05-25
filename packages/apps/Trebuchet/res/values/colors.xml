@@ -88,4 +88,7 @@
     <color name="preload_icon_background_color_dark">#40484D</color>
 
     <color name="work_turn_on_stroke">?android:attr/colorAccent</color>
+
+    <color name="taskbar_bg_opaque">#FF000000</color>
+    <color name="taskbar_bg_translucent">#80000000</color>  <!-- 50% black -->
 </resources>
