@@ -234,6 +234,24 @@ public class NavbarButtonsViewController implements TaskbarControllers.LoggableT
             mPropertyHolders.add(new StatePropertyHolder(imeSwitcherButton,
                     flags -> ((flags & FLAG_SWITCHER_SHOWING) != 0)
                             && ((flags & FLAG_ROTATION_BUTTON_VISIBLE) == 0)));
+
+            // Position the IME switcher immediately to the right of the All-Apps icon with an 8dp gap
+            imeSwitcherButton.post(() -> {
+                View allApps = mControllers.taskbarViewController.getAllAppsButtonView();
+                if (allApps != null) {
+                    int gapPx = (int) (8 * resources.getDisplayMetrics().density);
+                    // compute All-Apps left relative to nav-buttons container
+                    int[] allAppsLoc = new int[2];
+                    allApps.getLocationOnScreen(allAppsLoc);
+                    int[] navLoc = new int[2];
+                    mNavButtonsView.getLocationOnScreen(navLoc);
+                    int relativeLeft = allAppsLoc[0] - navLoc[0];
+                    FrameLayout.LayoutParams lp =
+                            (FrameLayout.LayoutParams) imeSwitcherButton.getLayoutParams();
+                    lp.setMarginStart(relativeLeft + allApps.getWidth() + gapPx);
+                    imeSwitcherButton.setLayoutParams(lp);
+                }
+            });
         }
 
         mPropertyHolders.add(new StatePropertyHolder(
@@ -333,7 +351,6 @@ public class NavbarButtonsViewController implements TaskbarControllers.LoggableT
             public void recreateControllers() {
                 mControllers = new TouchController[0];
             }
-
             @Override
             protected boolean canFindActiveController() {
                 // We don't have any controllers, but we don't want any floating views such as

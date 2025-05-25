@@ -210,11 +210,13 @@ public class TaskbarDragLayer extends BaseDragLayer<TaskbarActivityContext> {
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
 
-        // 1) Position “all apps” button at 4 dp from the left (if needed)
+        final float density = getResources().getDisplayMetrics().density;
+
+        // 1) Position “all apps” button at 4 dp from the left
         View allApps = findViewById(R.id.all_apps_button);
         if (allApps != null) {
-            int marginPx = (int) (getResources().getDisplayMetrics().density * 4);
-            int newLeft = left + marginPx;
+            int insetLeft = (int) (4 * density);
+            int newLeft = left + insetLeft;
             allApps.layout(
                 newLeft,
                 allApps.getTop(),
@@ -223,16 +225,27 @@ public class TaskbarDragLayer extends BaseDragLayer<TaskbarActivityContext> {
             );
         }
 
-        // 2) Center the nav-buttons group
+        // 2) Center the nav-buttons group between two equal insets
         View endNav = findViewById(R.id.end_nav_buttons);
         if (endNav != null) {
-            int parentWidth = right - left;
-            int childWidth  = endNav.getMeasuredWidth();
-            int newLeft     = left + (parentWidth - childWidth) / 2;
+            // spacing between all-apps and nav-buttons
+            int gap = (int) (8 * density);
+
+            // compute left inset = allApps.right + gap
+            int inset = allApps != null
+                    ? allApps.getRight() + gap
+                    : (int) (gap);  // fallback if somehow allApps is missing
+
+            int parentWidth    = right  - left;
+            int safeWidth      = parentWidth - inset * 2;
+            int childWidth     = endNav.getMeasuredWidth();
+            int offsetInSafe   = (safeWidth - childWidth) / 2;
+
+            int newNavLeft     = left + inset + offsetInSafe;
             endNav.layout(
-                newLeft,
+                newNavLeft,
                 endNav.getTop(),
-                newLeft + childWidth,
+                newNavLeft + childWidth,
                 endNav.getBottom()
             );
         }
