@@ -27,6 +27,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.UserInfo;
 import android.content.pm.ApplicationInfo;
+import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -47,6 +48,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
 import android.telephony.TelephonyManager;
 import android.util.ArraySet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -86,6 +88,7 @@ import android.app.Activity;
 import android.widget.Toast;
 import android.os.BatteryManager;
 import android.widget.TextView;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.os.Build;
@@ -254,50 +257,91 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
     }
 
     /**
-     * Modified method to show the global actions dialog in immersive mode.
+     * Modified method to show the global actions dialog in immersive mode,
+     * blur it, and size it to 50% width in landscape (full width in portrait),
+     * re-applying on rotation/layout changes.
      */
     private void handleShow() {
         awakenIfNecessary();
         mDialog = createDialog();
         prepareDialog();
 
-        // If we only have 1 item and it's a simple press action, just do this action.
+        // If there's only one simple action, just fire it
         if (mAdapter.getCount() == 1
                 && mAdapter.getItem(0) instanceof SinglePressAction
                 && !(mAdapter.getItem(0) instanceof LongPressAction)) {
             ((SinglePressAction) mAdapter.getItem(0)).onPress();
-        } else {
-            if (mDialog != null) {
-                WindowManager.LayoutParams attrs = mDialog.getWindow().getAttributes();
-                attrs.setTitle("LegacyGlobalActions");
-                mDialog.getWindow().setAttributes(attrs);
-                mDialog.show();
-                ListView list = mDialog.getListView();
-                list.setBackgroundColor(Color.TRANSPARENT);
-                list.setDivider(null);
-                list.setDividerHeight(0);
-                list.setPadding(0, 0, 0, 0);
-                // ─── Android S+ window blur: MUST be after show() ───
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    Window w = mDialog.getWindow();
-                    // blur-behind (depth-of-field)
-                    w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
-                    WindowManager.LayoutParams lp = w.getAttributes();
-                    lp.setBlurBehindRadius(20);
-                    lp.dimAmount = 0.1f;            // optional dim when blur off
-                    w.setAttributes(lp);
-
-                    // background blur (frosted-glass)
-                    w.setBackgroundBlurRadius(50);
-                }
-                // ──────────────────────────────────────────────────────
-
-                // Instead of disabling the status bar expansion, enable full immersive mode:
-                enableImmersiveModeForDialog(mDialog);
-                // Ensure memory update starts when dialog is shown.
-                updateMemoryAndCpuUsage();
-            }
+            return;
         }
+
+        // Otherwise show the full dialog
+        if (mDialog == null) return;
+        Window w = mDialog.getWindow();
+
+        // 1) Set title on the window
+        WindowManager.LayoutParams attrs = w.getAttributes();
+        attrs.setTitle("LegacyGlobalActions");
+        w.setAttributes(attrs);
+
+        // 2) Show it
+        mDialog.show();
+
+        // 3) Tidy up the ListView (transparent, no dividers)
+        ListView list = mDialog.getListView();
+        list.setBackgroundColor(Color.TRANSPARENT);
+        list.setDivider(null);
+        list.setDividerHeight(0);
+        list.setPadding(0, 0, 0, 0);
+
+        // 4) Android 12+ cross-window blur
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+            WindowManager.LayoutParams lp = w.getAttributes();
+            lp.setBlurBehindRadius(20);
+            lp.dimAmount = 0.1f;
+            w.setAttributes(lp);
+            w.setBackgroundBlurRadius(50);
+        }
+
+        // 5) Size & center the window based on current orientation
+        applyAdaptiveWidth(w);
+
+        // 6) Listen for any layout changes (including rotation) and re-apply
+        View decor = w.getDecorView();
+        decor.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v,
+                                       int left, int top, int right, int bottom,
+                                       int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                // if size really changed, re-apply
+                if (right - left != oldRight - oldLeft
+                        || bottom - top != oldBottom - oldTop) {
+                    applyAdaptiveWidth(w);
+                }
+            }
+        });
+
+        // 7) Finally, immersive mode & start memory updates
+        enableImmersiveModeForDialog(mDialog);
+        updateMemoryAndCpuUsage();
+    }
+
+    /** 
+     * Helper: sets the window width to MATCH_PARENT in portrait, 60% in landscape,
+     * and always centers it.
+     */
+    private void applyAdaptiveWidth(Window w) {
+        int orientation = mContext.getResources().getConfiguration().orientation;
+        int width;
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            DisplayMetrics dm = new DisplayMetrics();
+            w.getWindowManager().getDefaultDisplay().getMetrics(dm);
+            width = (int) (dm.widthPixels * 0.6f);
+        } else {
+            width = ViewGroup.LayoutParams.MATCH_PARENT;
+        }
+        w.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT);
+        w.setGravity(Gravity.CENTER);
     }
 
     /**
@@ -477,7 +521,7 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
         float[] outerRadii = new float[] {16, 16, 16, 16, 16, 16, 16, 16}; // Set corner radius
         RoundRectShape roundedRect = new RoundRectShape(outerRadii, null, null);
         ShapeDrawable shapeDrawable = new ShapeDrawable(roundedRect);
-        shapeDrawable.getPaint().setColor(Color.parseColor("#EE333333")); // Transparent black
+        shapeDrawable.getPaint().setColor(Color.parseColor("#FA111111")); // Transparent black
         shapeDrawable.getPaint().setStyle(Paint.Style.FILL);
 
         // Apply the rounded background
