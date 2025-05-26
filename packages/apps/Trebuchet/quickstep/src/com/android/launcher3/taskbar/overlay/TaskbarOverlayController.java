@@ -176,7 +176,7 @@ public final class TaskbarOverlayController {
         
         // ──> Enable blur‐behind and set a 20 dp blur radius
         layoutParams.flags |= LayoutParams.FLAG_BLUR_BEHIND;
-        layoutParams.setBlurBehindRadius(20);
+        layoutParams.setBlurBehindRadius(50);
         return layoutParams;
     }
 

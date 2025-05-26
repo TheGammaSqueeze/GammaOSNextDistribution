@@ -235,11 +235,11 @@ public class NavbarButtonsViewController implements TaskbarControllers.LoggableT
                     flags -> ((flags & FLAG_SWITCHER_SHOWING) != 0)
                             && ((flags & FLAG_ROTATION_BUTTON_VISIBLE) == 0)));
 
-            // Position the IME switcher immediately to the right of the All-Apps icon with an 8dp gap
+            // Position the IME switcher immediately to the right of the All-Apps icon with an 16dp gap
             imeSwitcherButton.post(() -> {
                 View allApps = mControllers.taskbarViewController.getAllAppsButtonView();
                 if (allApps != null) {
-                    int gapPx = (int) (8 * resources.getDisplayMetrics().density);
+                    int gapPx = (int) (16 * resources.getDisplayMetrics().density);
                     // compute All-Apps left relative to nav-buttons container
                     int[] allAppsLoc = new int[2];
                     allApps.getLocationOnScreen(allAppsLoc);

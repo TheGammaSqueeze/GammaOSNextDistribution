@@ -150,13 +150,22 @@ public class TaskbarManager {
         mUserSetupCompleteListener = isUserSetupComplete -> recreateTaskbar();
         mNavBarKidsModeListener = isNavBarKidsMode -> recreateTaskbar();
         mEnableTaskBarListener = isTaskBarEnabled -> {
-            // Create the illusion of this taking effect immediately
-            // Also needed because TaskbarManager inits before SystemUiProxy on start
-            boolean enabled = LineageSettings.System.getInt(mContext.getContentResolver(),
+            // Read back the persisted value
+            boolean enabled = LineageSettings.System.getInt(
+                    mContext.getContentResolver(),
                     LineageSettings.System.ENABLE_TASKBAR, 0) == 1;
-            SystemUiProxy.INSTANCE.get(mContext).setTaskbarEnabled(enabled);
 
-            // Restart launcher
+            // If this change was driven by our own nav-mode logic, just apply in-RAM
+            if ((mNavMode == NavigationMode.NO_BUTTON && !enabled)
+                    || (mNavMode != NavigationMode.NO_BUTTON && enabled)) {
+                Log.d(TAG, "Programmatic nav-mode change → setTaskbarEnabled(" + enabled + ")");
+                SystemUiProxy.INSTANCE.get(mContext).setTaskbarEnabled(enabled);
+                return;
+            }
+
+            // Otherwise it's a user (or adb) toggle: apply and restart launcher
+            Log.d(TAG, "User toggled taskbar (enabled=" + enabled + "), restarting");
+            SystemUiProxy.INSTANCE.get(mContext).setTaskbarEnabled(enabled);
             System.exit(0);
         };
         // TODO(b/227669780): Consolidate this w/ DisplayController callbacks
@@ -229,17 +238,24 @@ public class TaskbarManager {
             if ((flags & CHANGE_FLAGS) != 0) {
                 mNavMode = info.navigationMode;
 
-                // ────────────────────────────────────────────────────────
-                // If we’ve switched into pure-gesture nav, force-disable
-                // the Taskbar flag in Settings so it can’t come back on.
-                if (mNavMode == NavigationMode.NO_BUTTON) {
-                    LineageSettings.System.putInt(
-                        mContext.getContentResolver(),
-                        LineageSettings.System.ENABLE_TASKBAR,
-                        0
-                    );
-                }
-                // ────────────────────────────────────────────────────────
+            // ────────────────────────────────────────────────────────
+            // Flip the persisted setting based on nav-mode:
+            if (mNavMode == NavigationMode.NO_BUTTON) {
+                Log.d(TAG, "Nav mode NO_BUTTON → disabling taskbar persistently");
+                LineageSettings.System.putInt(
+                    mContext.getContentResolver(),
+                    LineageSettings.System.ENABLE_TASKBAR,
+                    0
+                );
+            } else if (mNavMode != NavigationMode.NO_BUTTON) {
+                Log.d(TAG, "Nav mode THREE_BUTTON → enabling taskbar persistently");
+                LineageSettings.System.putInt(
+                    mContext.getContentResolver(),
+                    LineageSettings.System.ENABLE_TASKBAR,
+                    1
+                );
+            }
+            // ────────────────────────────────────────────────────────
 
                 recreateTaskbar();
             }
@@ -383,16 +399,31 @@ public class TaskbarManager {
      */
     @VisibleForTesting
     public void recreateTaskbar() {
+        Log.d(TAG, "GAMMA: recreateTaskbar() called; mNavMode=" + mNavMode);
         DeviceProfile dp = mUserUnlocked ?
                 LauncherAppState.getIDP(mContext).getDeviceProfile(mContext) : null;
 
         destroyExistingTaskbar();
 
         // ───────────────────────────────────────────────────────────────────
-        // If the user is in gesture-nav (no buttons), skip taskbar entirely
-        // to avoid inflating TaskbarView when it isn’t supported.
+        // If the user is in pure-gesture nav, disable it in Settings and skip creation.
         if (mNavMode == NavigationMode.NO_BUTTON) {
-            Log.w(TAG, "Gesture navigation active; skipping Taskbar creation");
+            Log.d(TAG, "GAMMA: Gesture navigation detected (mode=" + mNavMode + "); entering NO_BUTTON branch");
+
+            // 1) flip the persisted setting off
+            boolean success = LineageSettings.System.putInt(
+                    mContext.getContentResolver(),
+                    LineageSettings.System.ENABLE_TASKBAR,
+                    0
+            );
+            Log.d(TAG, "GAMMA: LineageSettings.System.ENABLE_TASKBAR set to 0 → " + success);
+
+            // 2) instant in-RAM hide
+            SystemUiProxy.INSTANCE
+                    .get(mContext)
+                    .setTaskbarEnabled(false);
+            Log.d(TAG, "GAMMA: SystemUiProxy.setTaskbarEnabled(false) invoked");
+
             return;
         }
         // ───────────

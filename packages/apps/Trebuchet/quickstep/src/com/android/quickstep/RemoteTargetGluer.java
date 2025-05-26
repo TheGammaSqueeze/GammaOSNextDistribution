@@ -18,6 +18,8 @@ package com.android.quickstep;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.util.Log;
+import android.util.DisplayMetrics;
 import android.view.RemoteAnimationTarget;
 
 import androidx.annotation.Nullable;
@@ -35,6 +37,8 @@ import java.util.ArrayList;
  * {@link TaskViewSimulator}
  */
 public class RemoteTargetGluer {
+    private static final String TAG = "RemoteTargetGluer";
+    private int mDisplayWidth, mDisplayHeight;
     private RemoteTargetHandle[] mRemoteTargetHandles;
     private SplitBounds mSplitBounds;
 
@@ -67,6 +71,10 @@ public class RemoteTargetGluer {
 
     private void init(Context context, BaseActivityInterface sizingStrategy, int numHandles,
             boolean forDesktop) {
+        // grab display size for fallback bounds
+        DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        mDisplayWidth  = dm.widthPixels;
+        mDisplayHeight = dm.heightPixels;
         mRemoteTargetHandles = createHandles(context, sizingStrategy, numHandles, forDesktop);
     }
 
@@ -116,6 +124,12 @@ public class RemoteTargetGluer {
                 mRemoteTargetHandles[0].mTaskViewSimulator.setPreview(targets.apps[0], null);
             }
         } else {
+            // If we don’t have at least two app targets, fall back to the non-split logic
+            if (targets == null || targets.apps == null || targets.apps.length < 2) {
+                Log.w(TAG, "assignTargetsForSplitScreen: less than 2 targets, falling back");
+                return assignTargets(targets);
+            }
+
             RemoteAnimationTarget topLeftTarget = targets.apps[0];
 
             // Fetch the adjacent target for split screen.
@@ -132,6 +146,12 @@ public class RemoteTargetGluer {
                     bottomRightTarget = target;
                     break;
                 }
+            }
+
+            // If the loop didn’t find a valid second target, fall back
+            if (bottomRightTarget == null) {
+                Log.w(TAG, "assignTargetsForSplitScreen: couldn't find split pair, falling back");
+                return assignTargets(targets);
             }
 
             // remoteTargetHandle[0] denotes topLeft task, so we pass in the bottomRight to exclude,
@@ -168,8 +188,20 @@ public class RemoteTargetGluer {
         return mRemoteTargetHandles;
     }
 
-    private Rect getStartBounds(RemoteAnimationTarget target) {
-        return target.startBounds == null ? target.screenSpaceBounds : target.startBounds;
+    private Rect getStartBounds(@Nullable RemoteAnimationTarget target) {
+        // no target → full-screen fallback
+        if (target == null) {
+            Log.w(TAG, "getStartBounds: target is null, using full-screen fallback");
+            return new Rect(0, 0, mDisplayWidth, mDisplayHeight);
+        }
+        // if startBounds not populated, fall back to screenSpaceBounds
+        Rect sb = target.startBounds;
+        if (sb == null) {
+            Log.w(TAG, "getStartBounds: startBounds null for task " + target.taskId
+                    + ", using screenSpaceBounds");
+            return target.screenSpaceBounds;
+        }
+        return sb;
     }
 
     /**
