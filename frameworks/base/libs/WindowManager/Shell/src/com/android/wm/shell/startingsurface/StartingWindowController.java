@@ -52,6 +52,9 @@ import com.android.wm.shell.common.SingleInstanceRemoteListener;
 import com.android.wm.shell.common.TransactionPool;
 import com.android.wm.shell.sysui.ShellController;
 import com.android.wm.shell.sysui.ShellInit;
+import java.util.Set;
+import androidx.collection.ArraySet;
+import android.os.SystemProperties;
 
 /**
  * Implementation to draw the starting window to an application, and remove the starting window
@@ -71,7 +74,8 @@ import com.android.wm.shell.sysui.ShellInit;
  */
 public class StartingWindowController implements RemoteCallable<StartingWindowController> {
     public static final String TAG = "ShellStartingWindow";
-
+    private static final String RETRO_ARCH_PKG = "com.retroarch.aarch64";
+    private final Set<Integer> mRetroArchTasks = new ArraySet<>();
     private static final long TASK_BG_COLOR_RETAIN_TIME_MS = 5000;
 
     private final StartingSurfaceDrawer mStartingSurfaceDrawer;
@@ -169,6 +173,11 @@ public class StartingWindowController implements RemoteCallable<StartingWindowCo
             }
             if (suggestionType != STARTING_WINDOW_TYPE_NONE) {
                 int taskId = runningTaskInfo.taskId;
+                // Mark RetroArch so we can delay its removal later
+                if (windowInfo.taskInfo.topActivityInfo.packageName
+                        .equals(RETRO_ARCH_PKG)) {
+                    mRetroArchTasks.add(taskId);
+                }
                 int color = mStartingSurfaceDrawer
                         .getStartingWindowBackgroundColorForTask(taskId);
                 if (color != Color.TRANSPARENT) {
@@ -216,11 +225,33 @@ public class StartingWindowController implements RemoteCallable<StartingWindowCo
      * Called when the content of a task is ready to show, starting window can be removed.
      */
     public void removeStartingWindow(StartingWindowRemovalInfo removalInfo) {
-        mSplashScreenExecutor.execute(() -> mStartingSurfaceDrawer.removeStartingWindow(
-                removalInfo));
+        final int taskId = removalInfo.taskId;
+
+        // read our two props once
+        String perfMode = SystemProperties.get("persist.gammaos.performance_mode", "");
+        String vendorDevice = SystemProperties.get("ro.product.vendor.device", "");
+
+        boolean isRetroarch    = mRetroArchTasks.contains(taskId);
+        boolean isGammaDevice  = "ums9620_2h10".equals(vendorDevice);
+        boolean isPowerOrStock = "powersave".equals(perfMode) || "stock".equals(perfMode);
+
+        if (isRetroarch && isGammaDevice && isPowerOrStock) {
+            // hold the black splash a bit longer until RetroArch paints
+            mSplashScreenExecutor.executeDelayed(() -> {
+                mStartingSurfaceDrawer.removeStartingWindow(removalInfo);
+                mRetroArchTasks.remove(taskId);
+            }, /* delayMs= */ 1500);
+        } else {
+            // normal removal for everyone else
+            mSplashScreenExecutor.execute(() ->
+                mStartingSurfaceDrawer.removeStartingWindow(removalInfo)
+            );
+        }
+
+        // cleanup the cached bg-color after its normal retention window
         mSplashScreenExecutor.executeDelayed(() -> {
             synchronized (mTaskBackgroundColors) {
-                mTaskBackgroundColors.delete(removalInfo.taskId);
+                mTaskBackgroundColors.delete(taskId);
             }
         }, TASK_BG_COLOR_RETAIN_TIME_MS);
     }
