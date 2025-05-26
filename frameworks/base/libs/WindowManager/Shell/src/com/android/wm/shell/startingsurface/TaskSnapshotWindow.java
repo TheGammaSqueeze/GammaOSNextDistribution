@@ -179,7 +179,7 @@ public class TaskSnapshotWindow {
         layoutParams.windowAnimations = mainWindowParams.windowAnimations;
         layoutParams.dimAmount = mainWindowParams.dimAmount;
         layoutParams.type = TYPE_APPLICATION_STARTING;
-        layoutParams.format = PixelFormat.OPAQUE;
+        layoutParams.format = snapshot.getHardwareBuffer().getFormat();
         layoutParams.flags = (windowFlags & ~FLAG_INHERIT_EXCLUDES)
                 | FLAG_NOT_FOCUSABLE
                 | FLAG_NOT_TOUCHABLE;
@@ -357,23 +357,13 @@ public class TaskSnapshotWindow {
     private void drawSnapshot() {
         ProtoLog.v(ShellProtoLogGroup.WM_SHELL_STARTING_WINDOW,
                 "Drawing snapshot surface sizeMismatch=%b", mSizeMismatch);
-        // fill the entire window with our background color first
-        mTransaction.setBuffer(mSurfaceControl,
-                HardwareBuffer.createFromGraphicBuffer(
-                        GraphicBuffer.create(mFrame.width(), mFrame.height(),
-                                              PixelFormat.RGBA_8888,
-                                              GraphicBuffer.USAGE_SW_WRITE_RARELY)))
-                    .apply();
         if (mSizeMismatch) {
             // The dimensions of the buffer and the window don't match, so attaching the buffer
             // will fail. Better create a child window with the exact dimensions and fill the parent
             // window with the background color!
             drawSizeMismatchSnapshot();
         } else {
-            // in the size-match case we just blit the HW buffer on top of our opaque background
-            mTransaction.setBuffer(mSurfaceControl, mSnapshot.getHardwareBuffer())
-                        .setColorSpace(mSurfaceControl, mSnapshot.getColorSpace())
-                        .apply();
+            drawSizeMatchSnapshot();
         }
         mHasDrawn = true;
         reportDrawn();
@@ -387,11 +377,7 @@ public class TaskSnapshotWindow {
     }
 
     private void drawSizeMatchSnapshot() {
-        mTransaction
-                // Tell SurfaceFlinger this layer is 100% opaque
-                .setOpaque(mSurfaceControl, true)
-                // Now attach the real buffer
-                .setBuffer(mSurfaceControl, mSnapshot.getHardwareBuffer())
+        mTransaction.setBuffer(mSurfaceControl, mSnapshot.getHardwareBuffer())
                 .setColorSpace(mSurfaceControl, mSnapshot.getColorSpace())
                 .apply();
     }
@@ -415,20 +401,10 @@ public class TaskSnapshotWindow {
                 .setCallsite("TaskSnapshotWindow.drawSizeMismatchSnapshot")
                 .build();
 
-        // first, mark them both opaque
-        mTransaction
-                .show(childSurfaceControl)
-                .setOpaque(mSurfaceControl, true)
-                .setOpaque(childSurfaceControl, true);
-
         final Rect frame;
         // We can just show the surface here as it will still be hidden as the parent is
         // still hidden.
-        // Mark both parent & child as opaque before we crop/scale
-        mTransaction
-                .show(childSurfaceControl)
-                .setOpaque(mSurfaceControl, true)
-                .setOpaque(childSurfaceControl, true);
+        mTransaction.show(childSurfaceControl);
         if (aspectRatioMismatch) {
             // Clip off ugly navigation bar.
             final Rect crop = calculateSnapshotCrop();

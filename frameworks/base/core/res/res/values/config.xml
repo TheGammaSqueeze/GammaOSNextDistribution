@@ -3935,7 +3935,7 @@
     <bool name="config_supportsMultiWindow">true</bool>
 
     <!-- True if the device supports split screen as a form of multi-window. -->
-    <bool name="config_supportsSplitScreenMultiWindow">false</bool>
+    <bool name="config_supportsSplitScreenMultiWindow">true</bool>
 
     <!-- Whether the device supports non-resizable activity in multi windowing modes.
          -1: The device doesn't support non-resizable in multi windowing modes.
@@ -3943,7 +3943,7 @@
              screen (smallest width >= {@link config_largeScreenSmallestScreenWidthDp}).
           1: The device always supports non-resizable in multi windowing modes.
     -->
-    <integer name="config_supportsNonResizableMultiWindow">0</integer>
+    <integer name="config_supportsNonResizableMultiWindow">1</integer>
 
     <!-- Whether the device checks the activity min width/height to determine if it can be shown in
          multi windowing modes.

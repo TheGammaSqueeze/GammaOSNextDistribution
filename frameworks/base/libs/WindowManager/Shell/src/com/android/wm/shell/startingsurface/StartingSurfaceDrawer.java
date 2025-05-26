@@ -48,7 +48,6 @@ import android.util.Slog;
 import android.util.SparseArray;
 import android.view.Choreographer;
 import android.view.Display;
-import android.view.SurfaceControl;
 import android.view.SurfaceControlViewHost;
 import android.view.View;
 import android.view.WindowInsetsController;
@@ -262,7 +261,8 @@ public class StartingSurfaceDrawer {
                 WindowManager.LayoutParams.TYPE_APPLICATION_STARTING);
         params.setFitInsetsSides(0);
         params.setFitInsetsTypes(0);
-        params.format = PixelFormat.OPAQUE;
+        params.format = suggestType == STARTING_WINDOW_TYPE_LEGACY_SPLASH_SCREEN
+                ? PixelFormat.OPAQUE : PixelFormat.TRANSLUCENT;
         int windowFlags = WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                 | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
@@ -327,7 +327,6 @@ public class StartingSurfaceDrawer {
         final SplashScreenViewSupplier viewSupplier = new SplashScreenViewSupplier();
         final FrameLayout rootLayout = new FrameLayout(
                 mSplashscreenContentDrawer.createViewContextWrapper(context));
-        rootLayout.setBackgroundColor(Color.BLACK);
         rootLayout.setPadding(0, 0, 0, 0);
         rootLayout.setFitsSystemWindows(false);
         final Runnable setViewSynchronized = () -> {
