@@ -53,7 +53,6 @@ import com.android.wm.shell.common.TransactionPool;
 import com.android.wm.shell.sysui.ShellController;
 import com.android.wm.shell.sysui.ShellInit;
 
-import android.view.SurfaceControl;
 /**
  * Implementation to draw the starting window to an application, and remove the starting window
  * until the application displays its own window.
@@ -84,7 +83,6 @@ public class StartingWindowController implements RemoteCallable<StartingWindowCo
     private final ShellController mShellController;
     private final ShellTaskOrganizer mShellTaskOrganizer;
     private final ShellExecutor mSplashScreenExecutor;
-    private final TransactionPool mTransactionPool;
     /**
      * Need guarded because it has exposed to StartingSurface
      */
@@ -104,7 +102,6 @@ public class StartingWindowController implements RemoteCallable<StartingWindowCo
         mShellTaskOrganizer = shellTaskOrganizer;
         mStartingSurfaceDrawer = new StartingSurfaceDrawer(context, splashScreenExecutor,
                 iconProvider, pool);
-        mTransactionPool = pool;
         mStartingWindowTypeAlgorithm = startingWindowTypeAlgorithm;
         mSplashScreenExecutor = splashScreenExecutor;
         shellInit.addInitCallback(this::onInit, this);
@@ -158,20 +155,7 @@ public class StartingWindowController implements RemoteCallable<StartingWindowCo
     public void addStartingWindow(StartingWindowInfo windowInfo, IBinder appToken) {
         mSplashScreenExecutor.execute(() -> {
             Trace.traceBegin(TRACE_TAG_WINDOW_MANAGER, "addStartingWindow");
-            // ──── FORCE A BLACK CLEAR OF ANY RECYCLED BUFFER ────
-            // Acquire a transaction from the pool, draw a black layer, then release.
-            SurfaceControl.Transaction tx = mTransactionPool.acquire();
-            try {
-                // Create a pure-black layer on top of the starting-window leash
-                SurfaceControl blackLayer = tx.createColorLayer(
-                        windowInfo.leash, "starting-window-black", Color.BLACK);
-                // Ensure it’s above everything else
-                tx.setLayer(blackLayer, Integer.MAX_VALUE);
-                tx.show(blackLayer);
-                tx.apply();
-            } finally {
-                mTransactionPool.release(tx);
-            }
+
             final int suggestionType = mStartingWindowTypeAlgorithm.getSuggestedWindowType(
                     windowInfo);
             final RunningTaskInfo runningTaskInfo = windowInfo.taskInfo;
