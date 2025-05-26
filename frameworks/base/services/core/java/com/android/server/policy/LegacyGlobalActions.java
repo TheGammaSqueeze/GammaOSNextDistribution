@@ -521,7 +521,7 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
         float[] outerRadii = new float[] {16, 16, 16, 16, 16, 16, 16, 16}; // Set corner radius
         RoundRectShape roundedRect = new RoundRectShape(outerRadii, null, null);
         ShapeDrawable shapeDrawable = new ShapeDrawable(roundedRect);
-        shapeDrawable.getPaint().setColor(Color.parseColor("#FA111111")); // Transparent black
+        shapeDrawable.getPaint().setColor(Color.parseColor("#EA111111")); // Transparent black
         shapeDrawable.getPaint().setStyle(Paint.Style.FILL);
 
         // Apply the rounded background
@@ -801,7 +801,7 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
     }
 
     private Action getKillForegroundAppAction() {
-        return new SinglePressAction(R.drawable.ic_menu, R.string.gammaos_kill_app) {
+        return new SinglePressAction(R.drawable.ic_close, R.string.gammaos_kill_app) {
 
             @Override
             public void onPress() {
@@ -854,7 +854,7 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
     }
 
     private Action getKillBackgroundAppsAction() {
-        return new SinglePressAction(R.drawable.ic_menu, R.string.gammaos_kill_all_background_apps) {
+        return new SinglePressAction(R.drawable.ic_close, R.string.gammaos_kill_all_background_apps) {
 
             @Override
             public void onPress() {
@@ -911,7 +911,7 @@ class LegacyGlobalActions implements DialogInterface.OnDismissListener, DialogIn
     }
 
     private Action getKillAllAppsAction() {
-        return new SinglePressAction(R.drawable.ic_menu, R.string.gammaos_kill_all_apps) {
+        return new SinglePressAction(R.drawable.ic_close, R.string.gammaos_kill_all_apps) {
 
             @Override
             public void onPress() {

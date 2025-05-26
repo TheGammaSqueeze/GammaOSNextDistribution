@@ -158,6 +158,8 @@ please see themes_device_defaults.xml.
 
         <!-- Window attributes -->
         <item name="windowBackground">?attr/colorBackground</item>
+        <!-- FORCE pure black launch background to eat stale HWC buffers -->
+        <item name="android:windowBackground">@android:color/black</item>
         <item name="windowClipToOutline">true</item>
         <item name="windowFrame">@null</item>
         <item name="windowNoTitle">@bool/config_windowNoTitleDefault</item>
@@ -531,6 +533,8 @@ please see themes_device_defaults.xml.
 
         <!-- Window attributes -->
         <item name="windowBackground">?attr/colorBackground</item>
+        <!-- FORCE pure black launch background to eat stale HWC buffers -->
+        <item name="android:windowBackground">@android:color/black</item>
         <item name="windowClipToOutline">true</item>
         <item name="windowFrame">@null</item>
         <item name="windowNoTitle">@bool/config_windowNoTitleDefault</item>
