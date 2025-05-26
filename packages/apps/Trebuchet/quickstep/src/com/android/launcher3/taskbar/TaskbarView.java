@@ -73,6 +73,9 @@ public class TaskbarView extends FrameLayout implements FolderIcon.FolderIconPar
 
     private final TaskbarActivityContext mActivityContext;
 
+    // Maximum height of the “handle” in persistent (non-transient) mode
+    private final int mHandleHeightPx;
+
     // Initialized in init.
     private TaskbarViewController.TaskbarViewCallbacks mControllerCallbacks;
     private View.OnClickListener mIconClickListener;
@@ -123,6 +126,9 @@ public class TaskbarView extends FrameLayout implements FolderIcon.FolderIconPar
                         ? R.dimen.transient_taskbar_all_apps_button_translation_x_offset
                         : R.dimen.taskbar_all_apps_button_translation_x_offset);
 
+        // Clamp to handle height in persistent mode
+        mHandleHeightPx = resources.getDimensionPixelSize(R.dimen.taskbar_handle_height);
+
         onDeviceProfileChanged(mActivityContext.getDeviceProfile());
 
         int actualMargin = resources.getDimensionPixelSize(R.dimen.taskbar_icon_spacing);
@@ -160,6 +166,16 @@ public class TaskbarView extends FrameLayout implements FolderIcon.FolderIconPar
 
         // TODO: Disable touch events on QSB otherwise it can crash.
         mQsb = LayoutInflater.from(context).inflate(R.layout.search_container_hotseat, this, false);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        // If we’re not in the transient (swipe-up) mode, clamp our height
+        boolean isTransient = DisplayController.isTransientTaskbar(mActivityContext);
+        if (!isTransient && getMeasuredHeight() > mHandleHeightPx) {
+            setMeasuredDimension(getMeasuredWidth(), mHandleHeightPx);
+        }
     }
 
     @Override
