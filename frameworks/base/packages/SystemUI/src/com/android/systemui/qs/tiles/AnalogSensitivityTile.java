@@ -23,12 +23,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
-import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.service.quicksettings.Tile;
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.Nullable;
@@ -40,30 +39,25 @@ import com.android.systemui.dagger.qualifiers.Main;
 import com.android.systemui.plugins.ActivityStarter;
 import com.android.systemui.plugins.FalsingManager;
 import com.android.systemui.plugins.qs.QSTile.BooleanState;
+import com.android.systemui.plugins.qs.QSTile.Icon;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
+import com.android.systemui.qs.tileimpl.QSTileImpl.ResourceIcon;
 
 import javax.inject.Inject;
-import java.io.OutputStream;
-import android.util.Log;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
 
-/** Quick settings tile: AnalogSensitivity **/
+/** Quick settings tile: Analog Sensitivity **/
 public class AnalogSensitivityTile extends QSTileImpl<BooleanState> {
 
     public static final String TILE_SPEC = "analogsensitivity";
 
-    private static final int STATE_ONE = 0;
-    private static final int STATE_TWO = 1;
-    private static final int STATE_THREE = 2;
-    private static final int STATE_FOUR = 3;
-    private static final int STATE_FIVE = 5;
-    private int currentState;
+    private static final String PROP_CONTROL = "persist.gammaos.analogsensitivity";
 
+    // Sequence of sensitivity values to cycle through
+    private static final int[] STATE_SEQUENCE = {0, 1, 2, 3, -3, -2, -1};
+    private int currentState;
 
     private final Icon mIcon = ResourceIcon.get(R.drawable.ic_more_vert);
     private final Receiver mReceiver = new Receiver();
@@ -80,19 +74,14 @@ public class AnalogSensitivityTile extends QSTileImpl<BooleanState> {
             QSLogger qsLogger
     ) {
         super(host, backgroundLooper, mainHandler, falsingManager, metricsLogger,
-                statusBarStateController, activityStarter, qsLogger);
-	currentState = readAnalogSensitivityControlValue(); // Initialize currentState based on ANALOG_SENSITIVITY
-        mReceiver.init();
-    }
+              statusBarStateController, activityStarter, qsLogger);
 
-    private int readAnalogSensitivityControlValue() {
-        try {
-            String commandOutput = sendShellCommand("od -An -t dI /data/rgp2xbox/ANALOG_SENSITIVITY");
-            return Integer.parseInt(commandOutput.trim());
-        } catch (NumberFormatException e) {
-            Log.e("AnalogSensitivityTile", "Error parsing ANALOG_SENSITIVITY value", e);
-            return STATE_ONE; // default value if reading fails
-        }
+        // 1) Read persisted prop (default to 0)
+        currentState = SystemProperties.getInt(PROP_CONTROL, 0);
+        // 2) Re-apply it in case it was changed externally
+        applyState(currentState);
+        // 3) Listen for screen-off to re-sync state
+        mReceiver.init();
     }
 
     @Override
@@ -107,39 +96,55 @@ public class AnalogSensitivityTile extends QSTileImpl<BooleanState> {
     }
 
     @Override
-    public void handleSetListening(boolean listening) {
+    protected void handleSetListening(boolean listening) {
+        super.handleSetListening(listening);
+        if (listening) {
+            int newState = SystemProperties.getInt(PROP_CONTROL, 0);
+            if (newState != currentState) {
+                currentState = newState;
+                refreshState();
+            }
+        }
     }
 
     @Override
     protected void handleClick(@Nullable View view) {
-        switch (currentState) {
-            case STATE_ONE:
-		sendShellCommand("/system/bin/setanalogsensitivity_15.sh");
-                currentState = STATE_TWO;
+        // Find current index in sequence and advance
+        int idx = 0;
+        for (int i = 0; i < STATE_SEQUENCE.length; i++) {
+            if (STATE_SEQUENCE[i] == currentState) {
+                idx = i;
                 break;
-            case STATE_TWO:
-                sendShellCommand("/system/bin/setanalogsensitivity_25.sh");
-                currentState = STATE_THREE;
-                break;
-            case STATE_THREE:
-                sendShellCommand("/system/bin/setanalogsensitivity_50.sh");
-                currentState = STATE_FOUR;
-                break;
-            case STATE_FOUR:
-                sendShellCommand("/system/bin/setanalogsensitivity_custom.sh");
-                currentState = STATE_FIVE;
-                break;
-            case STATE_FIVE:
-                sendShellCommand("/system/bin/setanalogsensitivity_default.sh");
-                currentState = STATE_ONE;
-                break;
+            }
         }
+        int next = STATE_SEQUENCE[(idx + 1) % STATE_SEQUENCE.length];
+        currentState = next;
+        applyState(currentState);
         refreshState();
     }
 
     @Override
-    protected void handleLongClick(@Nullable View view) {
-        refreshState();
+    protected void handleUpdateState(BooleanState state, Object arg) {
+        // Primary label
+        state.label = "Analog Sensitivity";
+        state.icon = mIcon;
+
+        // Secondary label shows the current value
+        String secondary;
+        switch (currentState) {
+            case -3: secondary = "-50%"; break;
+            case -2: secondary = "-25%"; break;
+            case -1: secondary = "-10%"; break;
+            case  1: secondary = "+10%"; break;
+            case  2: secondary = "+25%"; break;
+            case  3: secondary = "+50%"; break;
+            default: secondary = "Off"; break;
+        }
+        state.secondaryLabel = secondary;
+
+        state.state = (currentState == 0)
+                ? Tile.STATE_INACTIVE
+                : Tile.STATE_ACTIVE;
     }
 
     @Override
@@ -157,87 +162,40 @@ public class AnalogSensitivityTile extends QSTileImpl<BooleanState> {
         return VIEW_UNKNOWN;
     }
 
-    @Override
-    protected void handleUpdateState(BooleanState state, Object arg) {
-        switch (currentState) {
-            case STATE_ONE:
-                state.label = "Normal Analog Sensitivity";
-                state.icon = ResourceIcon.get(R.drawable.ic_more_vert);
-                state.state = Tile.STATE_INACTIVE;
-                break;
-            case STATE_TWO:
-                state.label = "Analog Sensitivity -15%";
-                state.icon = ResourceIcon.get(R.drawable.ic_more_vert);
-                state.state = Tile.STATE_ACTIVE;
-                break;
-            case STATE_THREE:
-                state.label = "Analog Sensitivity -25%";
-                state.icon = ResourceIcon.get(R.drawable.ic_more_vert);
-                state.state = Tile.STATE_ACTIVE;
-                break;
-            case STATE_FOUR:
-                state.label = "Analog Sensitivity -50%";
-                state.icon = ResourceIcon.get(R.drawable.ic_more_vert);
-                state.state = Tile.STATE_ACTIVE;
-                break;
-            case STATE_FIVE:
-                state.label = "Analog Sensitivity Custom";
-                state.icon = ResourceIcon.get(R.drawable.ic_more_vert);
-                state.state = Tile.STATE_ACTIVE;
-                break;
+    /**
+     * Write the current sensitivity into the system property.
+     */
+    private void applyState(int stateValue) {
+        String value = Integer.toString(stateValue);
+        SystemProperties.set(PROP_CONTROL, value);
+        if (Log.isLoggable("AnalogSensitivityTile", Log.DEBUG)) {
+            Log.d("AnalogSensitivityTile", PROP_CONTROL + "=" + value);
         }
     }
 
-    private String sendShellCommand(String command) {
-        StringBuilder output = new StringBuilder();
-        Process process = null;
-        BufferedReader reader = null;
-
-        try {
-            process = Runtime.getRuntime().exec(command); // Execute the command
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line);
-            }
-
-            process.waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (process != null) {
-                process.destroy();
-            }
-        }
-
-        return output.toString();
-    }
-
+    /**
+     * Receiver to re-sync state on screen-off.
+     */
     private final class Receiver extends BroadcastReceiver {
-        public void init() {
-            // Register for Intent broadcasts for...
+        void init() {
             IntentFilter filter = new IntentFilter();
             filter.addAction(Intent.ACTION_SCREEN_OFF);
             mContext.registerReceiver(this, filter, null, mHandler);
         }
 
-        public void destroy() {
+        void destroy() {
             mContext.unregisterReceiver(this);
         }
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (Intent.ACTION_SCREEN_OFF.equals(action)) {
-                refreshState();
+            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                int newState = SystemProperties.getInt(PROP_CONTROL, 0);
+                if (newState != currentState) {
+                    currentState = newState;
+                    applyState(currentState);
+                    refreshState();
+                }
             }
         }
     }
