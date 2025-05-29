@@ -23,12 +23,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
-import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.service.quicksettings.Tile;
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.Nullable;
@@ -40,29 +39,31 @@ import com.android.systemui.dagger.qualifiers.Main;
 import com.android.systemui.plugins.ActivityStarter;
 import com.android.systemui.plugins.FalsingManager;
 import com.android.systemui.plugins.qs.QSTile.BooleanState;
+import com.android.systemui.plugins.qs.QSTile.Icon;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
+import com.android.systemui.qs.tileimpl.QSTileImpl.ResourceIcon;
 
 import javax.inject.Inject;
-import java.io.OutputStream;
-import android.util.Log;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
 
-/** Quick settings tile: RightAnalogAxis **/
+/** Quick settings tile: Right Stick Invert **/
 public class RightAnalogAxisTile extends QSTileImpl<BooleanState> {
 
     public static final String TILE_SPEC = "rightanalogaxis";
 
-    private static final int STATE_ONE = 0;
-    private static final int STATE_TWO = 1;
+    private static final String PROP_CONTROL = "persist.gammaos.rightstickinvert";
+    private static final String MODE_ON      = "on";
+    private static final String MODE_OFF     = "off";
+
+    private static final int STATE_ENABLED  = 1;
+    private static final int STATE_DISABLED = 0;
+
     private int currentState;
 
-
-    private final Icon mIcon = ResourceIcon.get(R.drawable.ic_add_circle);
+    private final Icon mIconOn  = ResourceIcon.get(R.drawable.ic_qs_circle);
+    private final Icon mIconOff = ResourceIcon.get(R.drawable.ic_add_circle);
     private final Receiver mReceiver = new Receiver();
 
     @Inject
@@ -77,19 +78,16 @@ public class RightAnalogAxisTile extends QSTileImpl<BooleanState> {
             QSLogger qsLogger
     ) {
         super(host, backgroundLooper, mainHandler, falsingManager, metricsLogger,
-                statusBarStateController, activityStarter, qsLogger);
-	currentState = readRightAnalogAxisControlValue(); // Initialize currentState based on RIGHTANALOG_AXIS
-        mReceiver.init();
-    }
+              statusBarStateController, activityStarter, qsLogger);
 
-    private int readRightAnalogAxisControlValue() {
-        try {
-            String commandOutput = sendShellCommand("od -An -t dI /data/rgp2xbox/RIGHTANALOG_AXIS");
-            return Integer.parseInt(commandOutput.trim());
-        } catch (NumberFormatException e) {
-            Log.e("RightAnalogAxisToggleTile", "Error parsing RIGHTANALOG_AXIS value", e);
-            return STATE_ONE; // default value if reading fails
-        }
+        // 1) Read the persisted prop (default to OFF if missing/invalid)
+        currentState = mapPropToState(
+                SystemProperties.get(PROP_CONTROL, MODE_OFF)
+        );
+        // 2) Re-apply it in case it was changed externally
+        applyState(currentState);
+        // 3) Listen for screen-off to re-sync state
+        mReceiver.init();
     }
 
     @Override
@@ -104,27 +102,39 @@ public class RightAnalogAxisTile extends QSTileImpl<BooleanState> {
     }
 
     @Override
-    public void handleSetListening(boolean listening) {
+    protected void handleSetListening(boolean listening) {
+        super.handleSetListening(listening);
+        if (listening) {
+            // Re-read the prop when QS panel opens
+            int newState = mapPropToState(
+                    SystemProperties.get(PROP_CONTROL, MODE_OFF)
+            );
+            if (newState != currentState) {
+                currentState = newState;
+                refreshState();
+            }
+        }
     }
 
     @Override
     protected void handleClick(@Nullable View view) {
-        switch (currentState) {
-            case STATE_ONE:
-		sendShellCommand("/system/bin/setrightanalogaxisvalue_swapped.sh");
-                currentState = STATE_TWO;
-                break;
-            case STATE_TWO:
-                sendShellCommand("/system/bin/setrightanalogaxisvalue_default.sh");
-                currentState = STATE_ONE;
-                break;
-        }
+        // Toggle enabled ⇄ disabled
+        currentState = (currentState == STATE_ENABLED) ? STATE_DISABLED : STATE_ENABLED;
+        applyState(currentState);
         refreshState();
     }
 
     @Override
-    protected void handleLongClick(@Nullable View view) {
-        refreshState();
+    protected void handleUpdateState(BooleanState state, Object arg) {
+        if (currentState == STATE_ENABLED) {
+            state.label = "Right Stick Invert On";
+            state.icon  = mIconOn;
+            state.state = Tile.STATE_ACTIVE;
+        } else {
+            state.label = "Right Stick Invert Off";
+            state.icon  = mIconOff;
+            state.state = Tile.STATE_INACTIVE;
+        }
     }
 
     @Override
@@ -142,72 +152,48 @@ public class RightAnalogAxisTile extends QSTileImpl<BooleanState> {
         return VIEW_UNKNOWN;
     }
 
-    @Override
-    protected void handleUpdateState(BooleanState state, Object arg) {
-        switch (currentState) {
-            case STATE_ONE:
-                state.label = "Right Analog Default";
-                state.icon = ResourceIcon.get(R.drawable.ic_add_circle);
-                state.state = Tile.STATE_INACTIVE;
-                break;
-            case STATE_TWO:
-                state.label = "Right Analog Swapped";
-                state.icon = ResourceIcon.get(R.drawable.ic_add_circle);
-                state.state = Tile.STATE_ACTIVE;
-                break;
+    /** Map the string prop (“on”/“off”) to our internal state. Defaults to DISABLED. */
+    private int mapPropToState(String mode) {
+        return MODE_ON.equals(mode) ? STATE_ENABLED : STATE_DISABLED;
+    }
+
+    /** Map our internal state back to the string we store in the prop. */
+    private String mapStateToProp(int state) {
+        return (state == STATE_DISABLED) ? MODE_OFF : MODE_ON;
+    }
+
+    /** Write the current state into the system property. */
+    private void applyState(int state) {
+        String mode = mapStateToProp(state);
+        SystemProperties.set(PROP_CONTROL, mode);
+        if (Log.isLoggable("RightAnalogAxisTile", Log.DEBUG)) {
+            Log.d("RightAnalogAxisTile", PROP_CONTROL + "=" + mode);
         }
     }
 
-    private String sendShellCommand(String command) {
-        StringBuilder output = new StringBuilder();
-        Process process = null;
-        BufferedReader reader = null;
-
-        try {
-            process = Runtime.getRuntime().exec(command); // Execute the command
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line);
-            }
-
-            process.waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (process != null) {
-                process.destroy();
-            }
-        }
-
-        return output.toString();
-    }
-
+    /** Receiver to re-sync on screen-off. */
     private final class Receiver extends BroadcastReceiver {
-        public void init() {
-            // Register for Intent broadcasts for...
+        void init() {
             IntentFilter filter = new IntentFilter();
             filter.addAction(Intent.ACTION_SCREEN_OFF);
             mContext.registerReceiver(this, filter, null, mHandler);
         }
 
-        public void destroy() {
+        void destroy() {
             mContext.unregisterReceiver(this);
         }
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (Intent.ACTION_SCREEN_OFF.equals(action)) {
-                refreshState();
+            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                int newState = mapPropToState(
+                        SystemProperties.get(PROP_CONTROL, MODE_OFF)
+                );
+                if (newState != currentState) {
+                    currentState = newState;
+                    applyState(currentState);
+                    refreshState();
+                }
             }
         }
     }

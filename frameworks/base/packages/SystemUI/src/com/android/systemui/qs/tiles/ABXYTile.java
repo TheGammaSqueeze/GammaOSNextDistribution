@@ -23,12 +23,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
-import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.service.quicksettings.Tile;
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.Nullable;
@@ -40,29 +39,31 @@ import com.android.systemui.dagger.qualifiers.Main;
 import com.android.systemui.plugins.ActivityStarter;
 import com.android.systemui.plugins.FalsingManager;
 import com.android.systemui.plugins.qs.QSTile.BooleanState;
-import com.android.systemui.plugins.statusbar.StatusBarStateController;
+import com.android.systemui.plugins.qs.QSTile.Icon;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
+import com.android.systemui.qs.tileimpl.QSTileImpl.ResourceIcon;
+import com.android.systemui.plugins.statusbar.StatusBarStateController;
 
 import javax.inject.Inject;
-import java.io.OutputStream;
-import android.util.Log;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
 
-/** Quick settings tile: ABXY **/
+/** Quick settings tile: ABXY Swap **/
 public class ABXYTile extends QSTileImpl<BooleanState> {
 
     public static final String TILE_SPEC = "abxy";
 
-    private static final int STATE_ONE = 0;
-    private static final int STATE_TWO = 1;
+    private static final String PROP_CONTROL    = "persist.gammaos.abxyswap";
+    private static final String MODE_ON         = "on";
+    private static final String MODE_OFF        = "off";
+
+    private static final int STATE_ENABLED      = 1;
+    private static final int STATE_DISABLED     = 0;
+
     private int currentState;
 
-
-    private final Icon mIcon = ResourceIcon.get(R.drawable.ic_sysbar_rotate_button_ccw_start_0);
+    private final Icon mIconOn  = ResourceIcon.get(R.drawable.ic_sysbar_rotate_button_ccw_start_90);
+    private final Icon mIconOff = ResourceIcon.get(R.drawable.ic_sysbar_rotate_button_ccw_start_0);
     private final Receiver mReceiver = new Receiver();
 
     @Inject
@@ -77,19 +78,18 @@ public class ABXYTile extends QSTileImpl<BooleanState> {
             QSLogger qsLogger
     ) {
         super(host, backgroundLooper, mainHandler, falsingManager, metricsLogger,
-                statusBarStateController, activityStarter, qsLogger);
-	currentState = readABXYControlValue(); // Initialize currentState based on ABXY_LAYOUT
-        mReceiver.init();
-    }
+              statusBarStateController, activityStarter, qsLogger);
 
-    private int readABXYControlValue() {
-        try {
-            String commandOutput = sendShellCommand("od -An -t dI /data/rgp2xbox/ABXY_LAYOUT");
-            return Integer.parseInt(commandOutput.trim());
-        } catch (NumberFormatException e) {
-            Log.e("ABXYToggleTile", "Error parsing ABXY_LAYOUT value", e);
-            return STATE_ONE; // default value if reading fails
-        }
+        // 1) Read persisted prop (default to OFF)
+        currentState = mapPropToState(
+                SystemProperties.get(PROP_CONTROL, MODE_OFF)
+        );
+
+        // 2) Re-apply prop (in case changed externally)
+        applyState(currentState);
+
+        // 3) Listen for screen-off to re-sync
+        mReceiver.init();
     }
 
     @Override
@@ -104,27 +104,39 @@ public class ABXYTile extends QSTileImpl<BooleanState> {
     }
 
     @Override
-    public void handleSetListening(boolean listening) {
+    protected void handleSetListening(boolean listening) {
+        super.handleSetListening(listening);
+        if (listening) {
+            // Re-read prop when QS panel opens
+            int newState = mapPropToState(
+                    SystemProperties.get(PROP_CONTROL, MODE_ON)
+            );
+            if (newState != currentState) {
+                currentState = newState;
+                refreshState();
+            }
+        }
     }
 
     @Override
     protected void handleClick(@Nullable View view) {
-        switch (currentState) {
-            case STATE_ONE:
-		sendShellCommand("/system/bin/setabxyvalue_swapped.sh");
-                currentState = STATE_TWO;
-                break;
-            case STATE_TWO:
-                sendShellCommand("/system/bin/setabxyvalue_default.sh");
-                currentState = STATE_ONE;
-                break;
-        }
+        // Toggle enabled ↔ disabled
+        currentState = (currentState == STATE_ENABLED) ? STATE_DISABLED : STATE_ENABLED;
+        applyState(currentState);
         refreshState();
     }
 
     @Override
-    protected void handleLongClick(@Nullable View view) {
-        refreshState();
+    protected void handleUpdateState(BooleanState state, Object arg) {
+        if (currentState == STATE_ENABLED) {
+            state.label = "ABXY Swap On";
+            state.icon  = mIconOn;
+            state.state = Tile.STATE_ACTIVE;
+        } else {
+            state.label = "ABXY Swap Off";
+            state.icon  = mIconOff;
+            state.state = Tile.STATE_INACTIVE;
+        }
     }
 
     @Override
@@ -134,7 +146,7 @@ public class ABXYTile extends QSTileImpl<BooleanState> {
 
     @Override
     public CharSequence getTileLabel() {
-        return "ABXY Layout";
+        return "ABXY Swap";
     }
 
     @Override
@@ -142,72 +154,48 @@ public class ABXYTile extends QSTileImpl<BooleanState> {
         return VIEW_UNKNOWN;
     }
 
-    @Override
-    protected void handleUpdateState(BooleanState state, Object arg) {
-        switch (currentState) {
-            case STATE_ONE:
-                state.label = "ABXY Default";
-                state.icon = ResourceIcon.get(R.drawable.ic_sysbar_rotate_button_ccw_start_0);
-                state.state = Tile.STATE_INACTIVE;
-                break;
-            case STATE_TWO:
-                state.label = "ABXY Swapped";
-                state.icon = ResourceIcon.get(R.drawable.ic_sysbar_rotate_button_ccw_start_90);
-                state.state = Tile.STATE_ACTIVE;
-                break;
+    /** Map "on"/"off" to our internal state. Defaults to ENABLED. */
+    private int mapPropToState(String mode) {
+        return MODE_OFF.equals(mode) ? STATE_DISABLED : STATE_ENABLED;
+    }
+
+    /** Map our state back to prop string. */
+    private String mapStateToProp(int state) {
+        return (state == STATE_DISABLED) ? MODE_OFF : MODE_ON;
+    }
+
+    /** Write the current state into the system property. */
+    private void applyState(int state) {
+        String mode = mapStateToProp(state);
+        SystemProperties.set(PROP_CONTROL, mode);
+        if (Log.isLoggable("ABXYTile", Log.DEBUG)) {
+            Log.d("ABXYTile", "persist.gamma.abxyswap=" + mode);
         }
     }
 
-    private String sendShellCommand(String command) {
-        StringBuilder output = new StringBuilder();
-        Process process = null;
-        BufferedReader reader = null;
-
-        try {
-            process = Runtime.getRuntime().exec(command); // Execute the command
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line);
-            }
-
-            process.waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (process != null) {
-                process.destroy();
-            }
-        }
-
-        return output.toString();
-    }
-
+    /** Receiver to re-sync state on screen-off. */
     private final class Receiver extends BroadcastReceiver {
-        public void init() {
-            // Register for Intent broadcasts for...
+        void init() {
             IntentFilter filter = new IntentFilter();
             filter.addAction(Intent.ACTION_SCREEN_OFF);
             mContext.registerReceiver(this, filter, null, mHandler);
         }
 
-        public void destroy() {
+        void destroy() {
             mContext.unregisterReceiver(this);
         }
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (Intent.ACTION_SCREEN_OFF.equals(action)) {
-                refreshState();
+            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                int newState = mapPropToState(
+                        SystemProperties.get(PROP_CONTROL, MODE_ON)
+                );
+                if (newState != currentState) {
+                    currentState = newState;
+                    applyState(currentState);
+                    refreshState();
+                }
             }
         }
     }
