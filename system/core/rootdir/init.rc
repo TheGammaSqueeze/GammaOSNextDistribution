@@ -1334,3 +1334,23 @@ on property:persist.device_config.mglru_native.lru_gen_config=core_and_nonleaf_y
   write /sys/kernel/mm/lru_gen/enabled 5
 on property:persist.device_config.mglru_native.lru_gen_config=all
   write /sys/kernel/mm/lru_gen/enabled 7
+
+service gammaosdcdimming_enable /system/bin/sh -c "settings put secure reduce_bright_colors_activated 1"
+    class main
+    user root
+    group root system
+    oneshot
+    disabled
+
+service gammaosdcdimming_disable /system/bin/sh -c "settings put secure reduce_bright_colors_activated 0"
+    class main
+    user root
+    group root system
+    oneshot
+    disabled
+
+on property:sys.boot_completed=1 && property:persist.gammaos.dcdimmingemulation=1
+  start gammaosdcdimming_enable
+
+on property:sys.boot_completed=1 && property:persist.gammaos.dcdimmingemulation=0
+  start gammaosdcdimming_disable

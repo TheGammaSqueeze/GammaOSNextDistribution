@@ -82,6 +82,12 @@ import lineageos.providers.LineageSettings;
 import java.io.PrintWriter;
 import java.util.Objects;
 
+import android.content.ContentResolver;
+import android.os.SystemProperties;
+import android.os.PowerManager;
+import android.os.UserHandle;
+import android.provider.Settings;
+
 /**
  * Controls the power state of the display.
  *
@@ -111,6 +117,9 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
 
     private static final boolean DEBUG = false;
     private static final boolean DEBUG_PRETEND_PROXIMITY_SENSOR_ABSENT = false;
+
+    // remember last-seen DC-dim emulation state
+    private boolean mDcDimEnabled;
 
     // If true, uses the color fade on animation.
     // We might want to turn this off if we cannot get a guarantee that the screen
@@ -677,6 +686,36 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
         mPendingScreenBrightnessSetting = PowerManager.BRIGHTNESS_INVALID_FLOAT;
         mTemporaryAutoBrightnessAdjustment = PowerManager.BRIGHTNESS_INVALID_FLOAT;
         mPendingAutoBrightnessAdjustment = PowerManager.BRIGHTNESS_INVALID_FLOAT;
+        
+        // seed our local flag
+        mDcDimEnabled = SystemProperties.getInt(
+                "persist.gammaos.dcdimmingemulation", 0) == 1;
+
+        // whenever the prop changes, write the secure setting directly
+        SystemProperties.addChangeCallback(() -> {
+            boolean now = SystemProperties.getInt(
+                    "persist.gammaos.dcdimmingemulation", 0) == 1;
+            if (now != mDcDimEnabled) {
+                mDcDimEnabled = now;
+
+                ContentResolver cr = mContext.getContentResolver();
+                // WRITE_SECURE_SETTINGS permission is already held by system_server
+                Settings.Secure.putIntForUser(cr,
+                    Settings.Secure.REDUCE_BRIGHT_COLORS_ACTIVATED,
+                    now ? 1 : 0,
+                    UserHandle.USER_CURRENT);
+                if (now) {
+                    // set a sane default strength 1–95
+                    Settings.Secure.putIntForUser(cr,
+                        Settings.Secure.REDUCE_BRIGHT_COLORS_LEVEL,
+                        /* level= */ 50,
+                        UserHandle.USER_CURRENT);
+                }
+
+                // now re-apply your brightness logic
+                mHandler.post(this::updatePowerState);
+            }
+        });
 
         mBootCompleted = bootCompleted;
     }
@@ -684,6 +723,44 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
     private void applyReduceBrightColorsSplineAdjustment() {
         mHandler.obtainMessage(MSG_UPDATE_RBC).sendToTarget();
         sendUpdatePowerState();
+    }
+
+    private void applyDcDimmingOverlay() {
+        ContentResolver cr = mContext.getContentResolver();
+        // figure out which user we want (usually the "current" one)
+        int user = ActivityManager.getCurrentUser();
+        boolean dcDim = SystemProperties.getInt("persist.gammaos.dcdimmingemulation", 0) == 1;
+
+        if (dcDim) {
+            float sliderF = Settings.System.getFloatForUser(cr,
+                Settings.System.SCREEN_BRIGHTNESS_FLOAT,
+                1.0f,
+                user);
+            int level = 95 - Math.round(sliderF * 94f);
+            level = MathUtils.constrain(level, 1, 95);
+
+            Settings.Secure.putIntForUser(cr,
+                Settings.Secure.REDUCE_BRIGHT_COLORS_ACTIVATED,
+                1,
+                user);
+            Settings.Secure.putIntForUser(cr,
+                Settings.Secure.REDUCE_BRIGHT_COLORS_LEVEL,
+                level,
+                user);
+        } else {
+            Settings.Secure.putIntForUser(cr,
+                Settings.Secure.REDUCE_BRIGHT_COLORS_ACTIVATED,
+                0,
+                user);
+        }
+
+        // notify ColorDisplayService’s observer that the setting actually changed
+        cr.notifyChange(
+            Settings.Secure.getUriFor(Settings.Secure.REDUCE_BRIGHT_COLORS_ACTIVATED),
+            /* observer= */ null,
+            /* syncToNetwork= */ false,
+            user
+        );
     }
 
     private void handleRbcChanged() {
@@ -1269,6 +1346,9 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
     }
 
     private void updatePowerState() {
+        // whether our GammaOS DC-dimming emulation is currently enabled
+        final boolean dcDim = SystemProperties.getInt("persist.gammaos.dcdimmingemulation", 0) == 1;
+
         // Update the power state request.
         final boolean mustNotify;
         final int previousPolicy;
@@ -1547,6 +1627,12 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
                     || brightnessState == PowerManager.BRIGHTNESS_OFF_FLOAT) {
                 // Use current auto-brightness value and slowly adjust to changes.
                 brightnessState = clampScreenBrightness(brightnessState);
+                // When DC-dimming is active, force the backlight to 100%
+                if (dcDim) {
+                    brightnessState = PowerManager.BRIGHTNESS_MAX;   // i.e. 1.0f
+                    // and maybe mark it "temporary" so you skip the normal auto-ramp logic:
+                    mAppliedTemporaryBrightness = true;
+                }
                 if (mAppliedAutoBrightness && !autoBrightnessAdjustmentChanged) {
                     slowChange = true; // slowly adapt to auto-brightness
                 }
@@ -1572,6 +1658,11 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
             // to clamping so that they don't go beyond the current max as specified by HBM
             // Controller.
             brightnessState = clampScreenBrightness(brightnessState);
+            if (dcDim) {
+                brightnessState = PowerManager.BRIGHTNESS_MAX;   // i.e. 1.0f
+                // and maybe mark it "temporary" so you skip the normal auto-ramp logic:
+                mAppliedTemporaryBrightness = true;
+            }
             mAppliedAutoBrightness = false;
             brightnessAdjustmentFlags = 0;
         }
@@ -1590,6 +1681,11 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
             brightnessState = mScreenOffBrightnessSensorController.getAutomaticScreenBrightness();
             if (isValidBrightnessValue(brightnessState)) {
                 brightnessState = clampScreenBrightness(brightnessState);
+                if (dcDim) {
+                    brightnessState = PowerManager.BRIGHTNESS_MAX;   // i.e. 1.0f
+                    // and maybe mark it "temporary" so you skip the normal auto-ramp logic:
+                    mAppliedTemporaryBrightness = true;
+                }
                 updateScreenBrightnessSetting = mCurrentScreenBrightnessSetting != brightnessState;
                 mBrightnessReasonTemp.setReason(
                         BrightnessReason.REASON_SCREEN_OFF_BRIGHTNESS_SENSOR);
@@ -1608,6 +1704,14 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
             mBrightnessReasonTemp.setReason(BrightnessReason.REASON_MANUAL);
         }
 
+        // ── DC-DIMMING BACKLIGHT PINNING ──
+        if (SystemProperties.getInt("persist.gammaos.dcdimmingemulation", 0) == 1) {
+            // force the actual backlight to 100%
+            brightnessState = PowerManager.BRIGHTNESS_MAX;   // i.e. 1.0f
+            mAppliedTemporaryBrightness = true;              // skip the normal ramp logic
+        }
+
+        // ───────────────────────────────────
         // Now that a desired brightness has been calculated, apply brightness throttling. The
         // dimming and low power transformations that follow can only dim brightness further.
         //
@@ -3362,7 +3466,16 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
 
         @Override
         public void onChange(boolean selfChange, Uri uri) {
-            if (uri.equals(Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_MODE))) {
+            // 1) DC-dimming slider moved?
+            if (uri.equals(
+                Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_FLOAT))
+            ) {
+                applyDcDimmingOverlay();
+            }
+
+            // 2) The rest of your existing observer logic:
+            if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.SCREEN_BRIGHTNESS_MODE))) {
                 handleBrightnessModeChange();
             } else {
                 handleSettingsChange(false /* userSwitch */);

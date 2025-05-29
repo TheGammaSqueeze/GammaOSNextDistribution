@@ -92,6 +92,7 @@ import android.view.Window;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Editor;
 
+import android.annotation.NonNull;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.util.Preconditions;
 import com.android.internal.widget.ILockSettings;
@@ -110,6 +111,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import android.os.SystemProperties;
+
 /**
  * The Settings provider contains global system-level device preferences.
  */
@@ -3854,9 +3857,28 @@ public final class Settings {
             return getIntForUser(cr, name, def, cr.getUserId());
         }
 
-        /** @hide */
+        /**
+         * @hide
+         */
         @UnsupportedAppUsage
-        public static int getIntForUser(ContentResolver cr, String name, int def, int userHandle) {
+        public static int getIntForUser(
+                @NonNull ContentResolver cr,
+                @NonNull String name,
+                int def,
+                int userHandle) {
+            // DC-dimming emulation active?
+            if (SystemProperties.getInt("persist.gammaos.dcdimmingemulation", 0) == 1
+                    && SCREEN_BRIGHTNESS.equals(name)) {
+                // read overlay level (1=bright → 95=dark)
+                int level = Secure.getIntForUser(cr,
+                        Secure.REDUCE_BRIGHT_COLORS_LEVEL, 
+                        /*def=*/1,
+                        userHandle);
+                // map 1–95 onto slider 0–255
+                int slider = Math.round((level - 1) / 94f * 255f);
+                return slider;
+            }
+            // default behavior
             String v = getStringForUser(cr, name, userHandle);
             return parseIntSettingWithDefault(v, def);
         }
@@ -3909,10 +3931,27 @@ public final class Settings {
             return putIntForUser(cr, name, value, cr.getUserId());
         }
 
-        /** @hide */
+        /**
+         * @hide
+         */
         @UnsupportedAppUsage
-        public static boolean putIntForUser(ContentResolver cr, String name, int value,
+        public static boolean putIntForUser(
+                @NonNull ContentResolver cr,
+                @NonNull String name,
+                int value,
                 int userHandle) {
+            // Intercept SCREEN_BRIGHTNESS when DC-dimming is on
+            if (SystemProperties.getInt("persist.gammaos.dcdimmingemulation", 0) == 1
+                    && SCREEN_BRIGHTNESS.equals(name)) {
+                // map slider 0–255 onto overlay level 1 (bright) –95 (dark)
+                int level = 95 - Math.round((value / 255f) * 94f);
+                level = Math.min(95, Math.max(1, level));
+                return Secure.putIntForUser(cr,
+                        Secure.REDUCE_BRIGHT_COLORS_LEVEL, 
+                        level, 
+                        userHandle);
+            }
+            // default behavior
             return putStringForUser(cr, name, Integer.toString(value), userHandle);
         }
 
