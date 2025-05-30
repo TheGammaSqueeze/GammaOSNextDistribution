@@ -28,6 +28,10 @@ import com.android.systemui.qs.tiles.RightAnalogAxisTile;
 import com.android.systemui.qs.tiles.DpadAnalogToggleTile;
 import com.android.systemui.qs.tiles.GammaRGBTile;
 import com.android.systemui.qs.tiles.DCDimmingEmuTile;
+import com.android.systemui.qs.tiles.AnalogDeadzoneTile;
+import com.android.systemui.qs.tiles.AnalogCalibrationTile;
+import com.android.systemui.qs.tiles.DeepSleepModeTile;
+import com.android.systemui.qs.tiles.RetroArchMenuButtonOverrideTile;
 import com.android.systemui.qs.tiles.CaffeineTile
 import com.android.systemui.qs.tiles.CellularTile
 import com.android.systemui.qs.tiles.HeadsUpTile
@@ -111,6 +115,31 @@ interface LineageModule {
     @IntoMap
     @StringKey(DCDimmingEmuTile.TILE_SPEC)
     fun bindDCDimmingEmuTile(dcDimmingEmuTile: DCDimmingEmuTile): QSTileImpl<*>
+
+    /** Inject AnalogDeadzoneTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(AnalogDeadzoneTile.TILE_SPEC)
+    fun bindAnalogDeadzoneTile(analogDeadzoneTile: AnalogDeadzoneTile): QSTileImpl<*>
+
+    /** Inject AnalogCalibrationTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(AnalogCalibrationTile.TILE_SPEC)
+    fun bindAnalogCalibrationTile(analogCalibrationTile: AnalogCalibrationTile): QSTileImpl<*>
+
+    /** Inject DeepSleepModeTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(DeepSleepModeTile.TILE_SPEC)
+    fun bindDeepSleepModeTile(deepSleepModeTile: DeepSleepModeTile): QSTileImpl<*>
+
+
+    /** Inject RetroArchMenuButtonOverrideTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(RetroArchMenuButtonOverrideTile.TILE_SPEC)
+    fun bindRetroArchMenuButtonOverrideTile(retroArchMenuButtonOverrideTile: RetroArchMenuButtonOverrideTile): QSTileImpl<*>
 
     /** Inject CaffeineTile into tileMap in QSModule */
     @Binds
