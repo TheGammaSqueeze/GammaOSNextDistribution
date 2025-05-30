@@ -27,6 +27,7 @@ import com.android.systemui.qs.tiles.AnalogSensitivityTile;
 import com.android.systemui.qs.tiles.RightAnalogAxisTile;
 import com.android.systemui.qs.tiles.DpadAnalogToggleTile;
 import com.android.systemui.qs.tiles.GammaRGBTile;
+import com.android.systemui.qs.tiles.DCDimmingEmuTile;
 import com.android.systemui.qs.tiles.CaffeineTile
 import com.android.systemui.qs.tiles.CellularTile
 import com.android.systemui.qs.tiles.HeadsUpTile
@@ -104,6 +105,12 @@ interface LineageModule {
     @IntoMap
     @StringKey(GammaRGBTile.TILE_SPEC)
     fun bindGammaRGBTile(gammaRGBTile: GammaRGBTile): QSTileImpl<*>
+
+    /** Inject DCDimmingEmuTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(DCDimmingEmuTile.TILE_SPEC)
+    fun bindDCDimmingEmuTile(dcDimmingEmuTile: DCDimmingEmuTile): QSTileImpl<*>
 
     /** Inject CaffeineTile into tileMap in QSModule */
     @Binds
