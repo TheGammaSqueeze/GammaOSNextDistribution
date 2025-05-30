@@ -27,8 +27,8 @@
     <dimen name="keyguard_smartspace_top_offset">0dp</dimen>
 
     <!-- QS-->
-    <dimen name="qs_panel_padding_top">16dp</dimen>
-    <dimen name="qs_panel_padding">24dp</dimen>
+    <dimen name="qs_panel_padding_top">0dp</dimen>
+    <dimen name="qs_panel_padding">0dp</dimen>
     <dimen name="qs_content_horizontal_padding">24dp</dimen>
     <dimen name="qs_horizontal_margin">24dp</dimen>
     <!-- in split shade qs_tiles_page_horizontal_margin should be equal of qs_horizontal_margin/2,
@@ -77,4 +77,30 @@
     <dimen name="lockscreen_shade_keyguard_transition_vertical_offset">83dp</dimen>
 
     <dimen name="notification_panel_margin_horizontal">24dp</dimen>
+    
+    <!-- shrink the full-shade tiles from 88dp down to, say, 64dp: -->
+    <dimen name="qs_tile_height">62dp</dimen>
+
+    <!-- shrink the header (quick-QS) tiles from 48dp down to 40dp: -->
+    <dimen name="qs_quick_tile_size">40dp</dimen>
+
+    <!-- tighten up the gaps: -->
+    <dimen name="qs_tile_margin">4dp</dimen>
+    <dimen name="qs_tile_spacing">1dp</dimen>
+    <dimen name="qs_tile_text_size">11sp</dimen>
+    
+    <!-- eliminate the media-margin gap altogether -->
+    <dimen name="quick_settings_bottom_margin_media">0dp</dimen>
+
+    <!-- remove the QSPanel bottom padding -->
+    <dimen name="qs_panel_padding_bottom">0dp</dimen>
+    
+    <!-- body copy -->
+    <dimen name="notification_text_size">12sp</dimen>
+    <!-- main title -->
+    <dimen name="notification_title_text_size">12sp</dimen>
+    <!-- big title (e.g. media notifications) -->
+    <dimen name="notification_big_title_text_size">14sp</dimen>
+    <!-- secondary/subtext -->
+    <dimen name="notification_subtext_size">10sp</dimen>
 </resources>

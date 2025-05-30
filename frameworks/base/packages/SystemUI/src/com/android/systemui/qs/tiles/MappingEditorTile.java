@@ -216,6 +216,12 @@ public class MappingEditorTile extends QSTileImpl<BooleanState> {
 
             setContentView(root);
 
+            // make the window itself span the full screen width:
+            getWindow().setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            );
+
             loadMappings();
             save.setOnClickListener(v -> { saveMappings(); finish(); });
             cancel.setOnClickListener(v -> finish());
