@@ -1007,12 +1007,20 @@ public class DeviceProfile {
 
     /**
      * This method calculates the space between the icons to achieve a certain width.
+     * Safeguard against “divide by zero” when numShownHotseatIcons – 1 + numExtraBorder <= 0.
      */
     private int calculateHotseatBorderSpace(float hotseatWidthPx, int numExtraBorder) {
+        // Compute how many “gaps” we need: (icons – 1) plus any extra border slots.
+        int numBorders = (numShownHotseatIcons - 1 + numExtraBorder);
+        if (numBorders <= 0) {
+            // If there is no gap (or fewer icons than expected), just return 0.
+            return 0;
+        }
+
+        // Otherwise, safely compute:
         float hotseatIconsTotalPx = iconSizePx * numShownHotseatIcons;
-        int hotseatBorderSpacePx =
-                (int) (hotseatWidthPx - hotseatIconsTotalPx)
-                        / (numShownHotseatIcons - 1 + numExtraBorder);
+        int remainingPx = (int) (hotseatWidthPx - hotseatIconsTotalPx);
+        int hotseatBorderSpacePx = remainingPx / numBorders;
         return Math.min(hotseatBorderSpacePx, mMaxHotseatIconSpacePx);
     }
 
@@ -1493,10 +1501,18 @@ public class DeviceProfile {
     }
 
     public static int calculateCellWidth(int width, int borderSpacing, int countX) {
+        // Guard against divide-by-zero when countX <= 0
+        if (countX <= 0) {
+            return 0;
+        }
         return (width - ((countX - 1) * borderSpacing)) / countX;
     }
 
     public static int calculateCellHeight(int height, int borderSpacing, int countY) {
+        // Guard against divide-by-zero when countY <= 0
+        if (countY <= 0) {
+            return 0;
+        }
         return (height - ((countY - 1) * borderSpacing)) / countY;
     }
 

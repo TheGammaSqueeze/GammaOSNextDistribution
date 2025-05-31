@@ -110,19 +110,19 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     gammaos/utils/xz:system/bin/xz \
     gammaos/utils/inotifywait:system/bin/inotifywait \
+    gammaos/utils/firefox-fenix-139.0.multi.android-arm64-v8a.apk:system/etc/firefox-fenix-139.0.multi.android-arm64-v8a.apk \
     gammaos/customization.sh:system/bin/customization.sh \
     gammaos/magisk/magisk.apk:system/etc/magisk.apk \
     gammaos/magisk/magisk.tar.gz:system/etc/magisk.tar.gz \
     gammaos/retroarch/RetroArch_aarch64.apk:system/etc/RetroArch_aarch64.apk \
     gammaos/retroarch/retroarch.tar.xz:system/etc/retroarch.tar.xz \
-    gammaos/retroarch/retroarch64sdcard1-arc.tar.gz:system/etc/retroarch64sdcard1-arc.tar.gz \
     gammaos/retroarch/roms.tar.xz:system/etc/roms.tar.xz \
     gammaos/setup.sh:system/bin/setup.sh \
     gammaos/launcher/MiXplorer_v6.64.3-API29_B23090720.apk:system/etc/MiXplorer_v6.64.3-API29_B23090720.apk \
     gammaos/launcher/AuroraStore_4.6.2.apk:system/etc/AuroraStore_4.6.2.apk \
     gammaos/launcher/aurorastore.tar.gz:system/etc/aurorastore.tar.gz \
     gammaos/toast/gammaos-displayloading.apk:system/etc/gammaos-displayloading.apk \
-    gammaos/daijisho/daijisho_408.tar.gz:system/etc/daijisho_408.tar.gz \
+    gammaos/daijisho/daijisho412.apk.xz:system/etc/daijisho412.apk.xz \
     gammaos/daijisho/daijisho.tar.xz:system/etc/daijisho.tar.xz \
     gammaos/toast/Toast.apk:system/etc/Toast.apk \
     gammaos/emulators/drastic.tar.gz:system/etc/drastic.tar.gz \
