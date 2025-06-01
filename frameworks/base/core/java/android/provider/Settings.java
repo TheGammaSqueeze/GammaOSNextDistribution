@@ -8196,6 +8196,7 @@ public final class Settings {
          *
          * @hide
          */
+        @Readable
         public static final String REDUCE_BRIGHT_COLORS_ACTIVATED =
                 "reduce_bright_colors_activated";
 
@@ -8205,6 +8206,7 @@ public final class Settings {
          *
          * @hide
          */
+        @Readable
         public static final String REDUCE_BRIGHT_COLORS_LEVEL =
                 "reduce_bright_colors_level";
 
@@ -8213,6 +8215,7 @@ public final class Settings {
          *
          * @hide
          */
+        @Readable
         public static final String REDUCE_BRIGHT_COLORS_PERSIST_ACROSS_REBOOTS =
                 "reduce_bright_colors_persist_across_reboots";
 
