@@ -114,6 +114,7 @@ PRODUCT_COPY_FILES += \
     gammaos/customization.sh:system/bin/customization.sh \
     gammaos/magisk/magisk.apk:system/etc/magisk.apk \
     gammaos/magisk/magisk.tar.gz:system/etc/magisk.tar.gz \
+    gammaos/magisk/magisk2.tar.gz:system/etc/magisk2.tar.gz \
     gammaos/retroarch/RetroArch_aarch64.apk:system/etc/RetroArch_aarch64.apk \
     gammaos/retroarch/retroarch.tar.xz:system/etc/retroarch.tar.xz \
     gammaos/retroarch/roms.tar.xz:system/etc/roms.tar.xz \
@@ -121,19 +122,15 @@ PRODUCT_COPY_FILES += \
     gammaos/launcher/MiXplorer_v6.64.3-API29_B23090720.apk:system/etc/MiXplorer_v6.64.3-API29_B23090720.apk \
     gammaos/launcher/AuroraStore_4.6.2.apk:system/etc/AuroraStore_4.6.2.apk \
     gammaos/launcher/aurorastore.tar.gz:system/etc/aurorastore.tar.gz \
-    gammaos/toast/gammaos-displayloading.apk:system/etc/gammaos-displayloading.apk \
     gammaos/daijisho/daijisho412.apk.xz:system/etc/daijisho412.apk.xz \
     gammaos/daijisho/daijisho.tar.xz:system/etc/daijisho.tar.xz \
-    gammaos/toast/Toast.apk:system/etc/Toast.apk \
     gammaos/emulators/drastic.tar.gz:system/etc/drastic.tar.gz \
     gammaos/emulators/drastic_r2.6.0.4a.apk:system/etc/drastic_r2.6.0.4a.apk \
     gammaos/emulators/mupen64plusae.tar.gz:system/etc/mupen64plusae.tar.gz \
     gammaos/emulators/mupen64plusae_3.0.335.apk:system/etc/mupen64plusae_3.0.335.apk \
     gammaos/emulators/ppsspp.tar.xz:system/etc/ppsspp.tar.xz \
     gammaos/emulators/ppsspp_1.18.1.apk:system/etc/ppsspp_1.18.1.apk \
-    gammaos/emulators/flycast-release.apk:system/etc/flycast-release.apk \
-    gammaos/emulators/flycast.tar.xz:system/etc/flycast.tar.xz \
-    gammaos/launcher/gboard.tar.gz:system/etc/gboard.tar.gz
+    gammaos/emulators/flycast-release.apk:system/etc/flycast-release.apk
 
 SELINUX_IGNORE_NEVERALLOWS := true
 
