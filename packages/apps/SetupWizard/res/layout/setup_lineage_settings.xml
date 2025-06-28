@@ -111,19 +111,19 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="10%" />
+                    android:text="+10%" />
                 <Button
                     android:id="@+id/btn_sens_25"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="25%" />
+                    android:text="+25%" />
                 <Button
                     android:id="@+id/btn_sens_50"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="50%" />
+                    android:text="+50%" />
             </LinearLayout>
 
             <!-- Deadzone group -->
@@ -148,25 +148,25 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="5%" />
+                    android:text="+5%" />
                 <Button
                     android:id="@+id/btn_dead_10"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="10%" />
+                    android:text="+10%" />
                 <Button
                     android:id="@+id/btn_dead_15"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="15%" />
+                    android:text="+15%" />
                 <Button
                     android:id="@+id/btn_dead_20"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="20%" />
+                    android:text="+20%" />
             </LinearLayout>
 
             <!-- Invert Left -->
