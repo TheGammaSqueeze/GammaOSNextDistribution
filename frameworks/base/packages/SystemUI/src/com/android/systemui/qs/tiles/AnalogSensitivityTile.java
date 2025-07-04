@@ -153,6 +153,11 @@ public class AnalogSensitivityTile extends QSTileImpl<BooleanState> {
     }
 
     @Override
+    protected void handleLongClick(@Nullable View view) {
+        // no-op: we intercept the long-press here
+    }
+
+    @Override
     public CharSequence getTileLabel() {
         return "Analog Sensitivity";
     }
