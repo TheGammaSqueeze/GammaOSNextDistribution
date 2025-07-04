@@ -85,6 +85,7 @@ public abstract class WindowOrientationListener {
 
     private int mCurrentRotation = -1;
     private final Context mContext;
+    private final int mSysuiAccelOffset;
 
     private final Object mLock = new Object();
 
@@ -123,6 +124,9 @@ public abstract class WindowOrientationListener {
         mDefaultRotation = defaultRotation;
         mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         mRate = rate;
+        // Read our new “sysui” accel‐orientation prop (in degrees) and convert to 0–3 steps
+        mSysuiAccelOffset = (SystemProperties.getInt(
+                "ro.sensors.sysui_accelerometer_orientation", 0) / 90) & 3;
         List<Sensor> l = mSensorManager.getSensorList(Sensor.TYPE_DEVICE_ORIENTATION);
         Sensor wakeUpDeviceOrientationSensor = null;
         Sensor nonWakeUpDeviceOrientationSensor = null;
@@ -148,6 +152,7 @@ public abstract class WindowOrientationListener {
 
         if (mSensor != null) {
             mOrientationJudge = new OrientationSensorJudge();
+            return;
         }
 
         if (mOrientationJudge == null) {
@@ -327,6 +332,7 @@ public abstract class WindowOrientationListener {
 
             if (mOrientationJudge != null) {
                 mOrientationJudge.dumpLocked(pw, prefix);
+                pw.println(prefix + "mSysuiAccelOffset=" + mSysuiAccelOffset);
             }
         }
     }
@@ -803,17 +809,15 @@ public abstract class WindowOrientationListener {
                                 orientationAngle += 360;
                             }
 
-                            // Find the nearest rotation.
-                            int nearestRotation = (orientationAngle + 45) / 90;
-                            if (nearestRotation == 4) {
-                                nearestRotation = 0;
-                            }
-
-                            // Determine the predicted orientation.
-                            if (isTiltAngleAcceptableLocked(nearestRotation, tiltAngle)
-                                    && isOrientationAngleAcceptableLocked(nearestRotation,
-                                            orientationAngle)) {
-                                updatePredictedRotationLocked(now, nearestRotation);
+                            // Find the raw nearest rotation (0–3) from the angle.
+                            int rawNearest = (orientationAngle + 45) / 90;
+                            if (rawNearest == 4) rawNearest = 0;
+                            // Run *that* through the built-in tilt/hysteresis checks…
+                            if (isTiltAngleAcceptableLocked(rawNearest, tiltAngle)
+                                    && isOrientationAngleAcceptableLocked(rawNearest, orientationAngle)) {
+                                // …and *then* apply your sysui_accel offset to the finally-accepted value.
+                                int adjusted = (rawNearest + mSysuiAccelOffset) & 3;
+                                updatePredictedRotationLocked(now, adjusted);
                                 if (LOG) {
                                     Slog.v(TAG, "Predicted: "
                                             + "tiltAngle=" + tiltAngle
@@ -1145,7 +1149,13 @@ public abstract class WindowOrientationListener {
 
         @Override
         public void onSensorChanged(SensorEvent event) {
-            int reportedRotation = (int) event.values[0];
+            // pull the raw 0–3 from TYPE_DEVICE_ORIENTATION…
+            int raw = (int) event.values[0];
+
+            // …and apply our sysui_accel offset before we treat it as “reportedRotation”
+            final int reportedRotation = (raw
+                    + WindowOrientationListener.this.mSysuiAccelOffset) & 3;
+
             if (reportedRotation < 0 || reportedRotation > 3) {
                 return;
             }
