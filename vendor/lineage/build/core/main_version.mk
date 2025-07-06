@@ -14,7 +14,7 @@ ADDITIONAL_SYSTEM_PROPERTIES += \
 
 # LineageOS Platform Display Version
 ADDITIONAL_SYSTEM_PROPERTIES += \
-    ro.lineage.display.version=$(LINEAGE_DISPLAY_VERSION)
+    ro.lineage.display.version=GammaOS_Next_v1
 
 # LineageOS Platform SDK Version
 ADDITIONAL_SYSTEM_PROPERTIES += \

@@ -81,7 +81,7 @@
 
     <!-- Tiles native to System UI. Order should match "quick_settings_tiles_default" -->
     <string name="quick_settings_tiles_stock" translatable="false">
-        internet,wifi,cell,bt,flashlight,performance,fan,gammargb,abxy,deepsleepmode,rotation,dpadAnalogToggle,analogsensitivity,analogdeadzone,analogcalibration,analogaxis,rightanalogaxis,dcdimmingemulation,retroarchmenubuttonoverride,mappingeditor,dnd,alarm,airplane,nfc,controls,wallet,battery,cast,screenrecord,mictoggle,cameratoggle,location,hotspot,inversion,saver,dark,work,night,reverse,reduce_brightness,ambient_display,aod,caffeine,heads_up,reading_mode,sync,powershare,profiles,usb_tether,vpn
+        internet,wifi,cell,bt,flashlight,performance,fan,gammargb,abxy,deepsleepmode,rotation,dpadAnalogToggle,analogsensitivity,analogdeadzone,analogcalibration,analogaxis,rightanalogaxis,dcdimmingemulation,retroarchmenubuttonoverride,mappingeditor,dnd,alarm,airplane,nfc,controls,wallet,battery,cast,screenrecord,mictoggle,cameratoggle,location,hotspot,inversion,saver,dark,work,night,reverse,reduce_brightness,ambient_display,aod,caffeine,heads_up,reading_mode,sync,powershare,profiles,usb_tether,vpn,usbcontrollerswitch
     </string>
 
     <!-- The tiles to display in QuickSettings -->

@@ -48,12 +48,12 @@ import com.android.systemui.plugins.statusbar.StatusBarStateController;
 
 import javax.inject.Inject;
 
-/** Quick settings tile: ABXY Swap **/
-public class ABXYTile extends QSTileImpl<BooleanState> {
+/** Quick settings tile: USB Controller Switch **/
+public class USBControllerSwitchTile extends QSTileImpl<BooleanState> {
 
-    public static final String TILE_SPEC = "abxy";
+    public static final String TILE_SPEC = "usbcontrollerswitch";
 
-    private static final String PROP_CONTROL    = "persist.gammaos.abxyswap";
+    private static final String PROP_CONTROL    = "persist.gammaos.usbcontrollerswitch";
     private static final String MODE_ON         = "on";
     private static final String MODE_OFF        = "off";
 
@@ -62,12 +62,12 @@ public class ABXYTile extends QSTileImpl<BooleanState> {
 
     private int currentState;
 
-    private final Icon mIconOn  = ResourceIcon.get(R.drawable.ic_sysbar_rotate_button_ccw_start_90);
-    private final Icon mIconOff = ResourceIcon.get(R.drawable.ic_sysbar_rotate_button_ccw_start_0);
+    private final Icon mIconOn  = ResourceIcon.get(R.drawable.ic_play_games);
+    private final Icon mIconOff = ResourceIcon.get(R.drawable.ic_play_games);
     private final Receiver mReceiver = new Receiver();
 
     @Inject
-    public ABXYTile(
+    public USBControllerSwitchTile(
             QSHost host,
             @Background Looper backgroundLooper,
             @Main Handler mainHandler,
@@ -80,9 +80,9 @@ public class ABXYTile extends QSTileImpl<BooleanState> {
         super(host, backgroundLooper, mainHandler, falsingManager, metricsLogger,
               statusBarStateController, activityStarter, qsLogger);
 
-        // 1) Read persisted prop (default to OFF)
+        // 1) Read persisted prop (default to ON)
         currentState = mapPropToState(
-                SystemProperties.get(PROP_CONTROL, MODE_OFF)
+                SystemProperties.get(PROP_CONTROL, MODE_ON)
         );
 
         // 2) Re-apply prop (in case changed externally)
@@ -129,11 +129,11 @@ public class ABXYTile extends QSTileImpl<BooleanState> {
     @Override
     protected void handleUpdateState(BooleanState state, Object arg) {
         if (currentState == STATE_ENABLED) {
-            state.label = "ABXY Swap On";
+            state.label = "USB Controller Enabled";
             state.icon  = mIconOn;
             state.state = Tile.STATE_ACTIVE;
         } else {
-            state.label = "ABXY Swap Off";
+            state.label = "USB Controller Disabled";
             state.icon  = mIconOff;
             state.state = Tile.STATE_INACTIVE;
         }
@@ -151,7 +151,7 @@ public class ABXYTile extends QSTileImpl<BooleanState> {
 
     @Override
     public CharSequence getTileLabel() {
-        return "ABXY Swap";
+        return "USB Controller";
     }
 
     @Override
@@ -173,8 +173,8 @@ public class ABXYTile extends QSTileImpl<BooleanState> {
     private void applyState(int state) {
         String mode = mapStateToProp(state);
         SystemProperties.set(PROP_CONTROL, mode);
-        if (Log.isLoggable("ABXYTile", Log.DEBUG)) {
-            Log.d("ABXYTile", "persist.gammaos.abxyswap=" + mode);
+        if (Log.isLoggable("USBControllerSwitchTile", Log.DEBUG)) {
+            Log.d("USBControllerSwitchTile", PROP_CONTROL + "=" + mode);
         }
     }
 

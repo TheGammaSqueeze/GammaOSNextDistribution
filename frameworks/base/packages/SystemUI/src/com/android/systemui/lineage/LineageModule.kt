@@ -33,6 +33,7 @@ import com.android.systemui.qs.tiles.AnalogCalibrationTile;
 import com.android.systemui.qs.tiles.DeepSleepModeTile;
 import com.android.systemui.qs.tiles.MappingEditorTile;
 import com.android.systemui.qs.tiles.RetroArchMenuButtonOverrideTile;
+import com.android.systemui.qs.tiles.USBControllerSwitchTile;
 import com.android.systemui.qs.tiles.CaffeineTile
 import com.android.systemui.qs.tiles.CellularTile
 import com.android.systemui.qs.tiles.HeadsUpTile
@@ -135,12 +136,17 @@ interface LineageModule {
     @StringKey(DeepSleepModeTile.TILE_SPEC)
     fun bindDeepSleepModeTile(deepSleepModeTile: DeepSleepModeTile): QSTileImpl<*>
 
-
     /** Inject RetroArchMenuButtonOverrideTile into tileMap in QSModule */
     @Binds
     @IntoMap
     @StringKey(RetroArchMenuButtonOverrideTile.TILE_SPEC)
     fun bindRetroArchMenuButtonOverrideTile(retroArchMenuButtonOverrideTile: RetroArchMenuButtonOverrideTile): QSTileImpl<*>
+
+    /** Inject USBControllerSwitchTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(USBControllerSwitchTile.TILE_SPEC)
+    fun bindUSBControllerSwitchTile(usbControllerSwitchTile: USBControllerSwitchTile): QSTileImpl<*>
 
     /** Inject MappingEditorTile into tileMap in QSModule */
     @Binds

@@ -1361,6 +1361,7 @@ void EventHub::vibrate(int32_t deviceId, const VibrationElement& element) {
     std::scoped_lock _l(mLock);
     Device* device = getDeviceLocked(deviceId);
     if (device != nullptr && device->hasValidFd()) {
+        // proceed to upload or update the effect (kernel will allocate if id < 0)
         ff_effect effect;
         memset(&effect, 0, sizeof(effect));
         effect.type = FF_RUMBLE;
@@ -1370,10 +1371,25 @@ void EventHub::vibrate(int32_t deviceId, const VibrationElement& element) {
         effect.u.rumble.weak_magnitude = element.getMagnitude(FF_WEAK_MAGNITUDE_CHANNEL_IDX);
         effect.replay.length = element.duration.count();
         effect.replay.delay = 0;
-        if (ioctl(device->fd, EVIOCSFF, &effect)) {
-            ALOGW("Could not upload force feedback effect to device %s due to error %d.",
-                  device->identifier.name.c_str(), errno);
-            return;
+
+        // upload or update the effect, retry on transient EAGAIN, handle ENODEV specially
+        int rc = ioctl(device->fd, EVIOCSFF, &effect);
+        if (rc < 0) {
+            if (errno == EAGAIN) {
+                ALOGI("Transient EAGAIN uploading FF effect to %s, retrying",
+                      device->identifier.name.c_str());
+                rc = ioctl(device->fd, EVIOCSFF, &effect);
+            }
+            if (rc < 0) {
+                if (errno == ENODEV) {
+                    ALOGW("Device %s removed, cannot upload FF effect", 
+                          device->identifier.name.c_str());
+                } else {
+                    ALOGW("Could not upload force feedback effect to device %s due to error %d.",
+                          device->identifier.name.c_str(), errno);
+                }
+                return;
+            }
         }
         device->ffEffectId = effect.id;
 
@@ -1383,9 +1399,15 @@ void EventHub::vibrate(int32_t deviceId, const VibrationElement& element) {
         ev.type = EV_FF;
         ev.code = device->ffEffectId;
         ev.value = 1;
-        if (write(device->fd, &ev, sizeof(ev)) != sizeof(ev)) {
-            ALOGW("Could not start force feedback effect on device %s due to error %d.",
-                  device->identifier.name.c_str(), errno);
+
+        // robust write: retry on EINTR
+        ssize_t n;
+        do {
+            n = write(device->fd, &ev, sizeof(ev));
+        } while (n < 0 && errno == EINTR);
+        if (n != sizeof(ev)) {
+            ALOGW("Could not start force feedback effect on device %s due to error %s.",
+                  device->identifier.name.c_str(), strerror(errno));
             return;
         }
         device->ffEffectPlaying = true;
@@ -1396,6 +1418,12 @@ void EventHub::cancelVibrate(int32_t deviceId) {
     std::scoped_lock _l(mLock);
     Device* device = getDeviceLocked(deviceId);
     if (device != nullptr && device->hasValidFd()) {
+        // Guard against cancelling an effect that doesn't exist
+        if (device->ffEffectId < 0) {
+            ALOGW("No FF effect loaded on %s, skipping cancelVibrate()", 
+                  device->identifier.name.c_str());
+            return;
+        }
         if (device->ffEffectPlaying) {
             device->ffEffectPlaying = false;
 
@@ -1405,9 +1433,15 @@ void EventHub::cancelVibrate(int32_t deviceId) {
             ev.type = EV_FF;
             ev.code = device->ffEffectId;
             ev.value = 0;
-            if (write(device->fd, &ev, sizeof(ev)) != sizeof(ev)) {
-                ALOGW("Could not stop force feedback effect on device %s due to error %d.",
-                      device->identifier.name.c_str(), errno);
+
+            // robust write: retry on EINTR
+            ssize_t n;
+            do {
+                n = write(device->fd, &ev, sizeof(ev));
+            } while (n < 0 && errno == EINTR);
+            if (n != sizeof(ev)) {
+                ALOGW("Could not stop force feedback effect on device %s due to error %s.",
+                      device->identifier.name.c_str(), strerror(errno));
                 return;
             }
         }
