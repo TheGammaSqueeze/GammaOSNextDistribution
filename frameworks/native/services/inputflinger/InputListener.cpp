@@ -21,11 +21,13 @@
 //#define LOG_NDEBUG 0
 
 #include "InputListener.h"
-
 #include <android-base/stringprintf.h>
 #include <android/log.h>
-#include <math.h>
 #include <utils/Trace.h>
+#include <math.h>
+#include <string>
+#include <typeinfo>
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 using android::base::StringPrintf;
 
@@ -48,7 +50,34 @@ void NotifyConfigurationChangedArgs::notify(InputListenerInterface& listener) co
     listener.notifyConfigurationChanged(this);
 }
 
+// Base dump implementation must live in android:: namespace
+std::string NotifyArgs::dump() const {
+    return StringPrintf("NotifyArgs(id=0x%" PRIx32 ")", id);
+}
+
+// ConfigurationChanged
+std::string NotifyConfigurationChangedArgs::dump() const {
+    return StringPrintf("NotifyConfigurationChangedArgs(id=0x%" PRIx32 ", time=%" PRId64 ")",
+                        id, eventTime);
+}
+
 // --- NotifyKeyArgs ---
+
+std::string NotifyKeyArgs::dump() const {
+    return StringPrintf(
+        "NotifyKeyArgs(id=0x%" PRIx32 ", time=%" PRId64
+        ", dev=%" PRId32 ", src=%s, act=%" PRId32
+        ", code=%" PRId32 ", flags=0x%08x, meta=0x%x)",
+        id,
+        eventTime,
+        deviceId,
+        inputEventSourceToString(source).c_str(),
+        action,
+        keyCode,
+        flags,
+        metaState
+    );
+}
 
 NotifyKeyArgs::NotifyKeyArgs(int32_t id, nsecs_t eventTime, nsecs_t readTime, int32_t deviceId,
                              uint32_t source, int32_t displayId, uint32_t policyFlags,
@@ -226,6 +255,13 @@ void NotifyMotionArgs::notify(InputListenerInterface& listener) const {
 
 // --- NotifySwitchArgs ---
 
+std::string NotifySwitchArgs::dump() const {
+    return StringPrintf("NotifySwitchArgs(id=0x%" PRIx32 ", time=%" PRId64
+                        ", values=0x%x, mask=0x%x)",
+                        id, eventTime,
+                        switchValues, switchMask);
+}
+
 NotifySwitchArgs::NotifySwitchArgs(int32_t id, nsecs_t eventTime, uint32_t policyFlags,
                                    uint32_t switchValues, uint32_t switchMask)
       : NotifyArgs(id, eventTime),
@@ -249,6 +285,16 @@ void NotifySwitchArgs::notify(InputListenerInterface& listener) const {
 }
 
 // --- NotifySensorArgs ---
+
+std::string NotifySensorArgs::dump() const {
+    std::string vstr;
+    for (size_t i = 0; i < values.size(); i++) {
+        if (i) vstr += ",";
+        vstr += StringPrintf("%.2f", values[i]);
+    }
+    return StringPrintf("NotifySensorArgs(id=0x%" PRIx32 ", time=%" PRId64 ", vals=[%s])",
+                        id, eventTime, vstr.c_str());
+}
 
 NotifySensorArgs::NotifySensorArgs(int32_t id, nsecs_t eventTime, int32_t deviceId, uint32_t source,
                                    InputDeviceSensorType sensorType,
@@ -285,6 +331,14 @@ void NotifySensorArgs::notify(InputListenerInterface& listener) const {
 
 // --- NotifyVibratorStateArgs ---
 
+std::string NotifyVibratorStateArgs::dump() const {
+    return StringPrintf("NotifyVibratorStateArgs(id=0x%" PRIx32 ", time=%" PRId64
+                        ", dev=%" PRId32 ", isOn=%d)",
+                        id, eventTime,
+                        deviceId,
+                        isOn);
+}
+
 NotifyVibratorStateArgs::NotifyVibratorStateArgs(int32_t id, nsecs_t eventTime, int32_t deviceId,
                                                  bool isOn)
       : NotifyArgs(id, eventTime), deviceId(deviceId), isOn(isOn) {}
@@ -303,6 +357,13 @@ void NotifyVibratorStateArgs::notify(InputListenerInterface& listener) const {
 
 // --- NotifyDeviceResetArgs ---
 
+std::string NotifyDeviceResetArgs::dump() const {
+    return StringPrintf("NotifyDeviceResetArgs(id=0x%" PRIx32 ", time=%" PRId64
+                        ", dev=%" PRId32 ")",
+                        id, eventTime,
+                        deviceId);
+}
+
 NotifyDeviceResetArgs::NotifyDeviceResetArgs(int32_t id, nsecs_t eventTime, int32_t deviceId)
       : NotifyArgs(id, eventTime), deviceId(deviceId) {}
 
@@ -318,6 +379,13 @@ void NotifyDeviceResetArgs::notify(InputListenerInterface& listener) const {
 }
 
 // --- NotifyPointerCaptureChangedArgs ---
+
+std::string NotifyPointerCaptureChangedArgs::dump() const {
+    return StringPrintf("NotifyPointerCaptureChangedArgs(id=0x%" PRIx32 ", time=%" PRId64
+                        ", seq=%" PRIu32 ")",
+                        id, eventTime,
+                        request.seq);
+}
 
 NotifyPointerCaptureChangedArgs::NotifyPointerCaptureChangedArgs(
         int32_t id, nsecs_t eventTime, const PointerCaptureRequest& request)
@@ -389,9 +457,19 @@ void QueuedInputListener::notifyPointerCaptureChanged(const NotifyPointerCapture
 }
 
 void QueuedInputListener::flush() {
-    for (const std::unique_ptr<NotifyArgs>& args : mArgsQueue) {
+    LOGD("QueuedInputListener::flush(): queueSize=%zu", mArgsQueue.size());
+
+    size_t idx = 0;
+    for (const auto& args : mArgsQueue) {
+        // full dump of each queued event (pointer + contents)
+        LOGD("QueuedInputListener::flush()[%zu] ptr=%p → %s",
+             idx,
+             args.get(),
+             args->dump().c_str());
+        idx++;
         args->notify(mInnerListener);
-    }
+     }
+
     mArgsQueue.clear();
 }
 

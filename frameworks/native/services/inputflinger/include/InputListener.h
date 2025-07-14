@@ -22,6 +22,7 @@
 #include <input/Input.h>
 #include <input/InputDevice.h>
 #include <input/TouchVideoFrame.h>
+#include <string>
 
 namespace android {
 
@@ -40,6 +41,7 @@ struct NotifyArgs {
     virtual ~NotifyArgs() { }
 
     virtual void notify(InputListenerInterface& listener) const = 0;
+    virtual std::string dump() const;
 };
 
 
@@ -57,6 +59,7 @@ struct NotifyConfigurationChangedArgs : public NotifyArgs {
     virtual ~NotifyConfigurationChangedArgs() { }
 
     void notify(InputListenerInterface& listener) const override;
+    std::string dump() const override;
 };
 
 
@@ -88,6 +91,7 @@ struct NotifyKeyArgs : public NotifyArgs {
     virtual ~NotifyKeyArgs() { }
 
     void notify(InputListenerInterface& listener) const override;
+    std::string dump() const override;
 };
 
 
@@ -169,6 +173,7 @@ struct NotifySensorArgs : public NotifyArgs {
     ~NotifySensorArgs() override {}
 
     void notify(InputListenerInterface& listener) const override;
+    std::string dump() const override;
 };
 
 /* Describes a switch event. */
@@ -189,6 +194,7 @@ struct NotifySwitchArgs : public NotifyArgs {
     virtual ~NotifySwitchArgs() { }
 
     void notify(InputListenerInterface& listener) const override;
+    std::string dump() const override;
 };
 
 
@@ -208,6 +214,7 @@ struct NotifyDeviceResetArgs : public NotifyArgs {
     virtual ~NotifyDeviceResetArgs() { }
 
     void notify(InputListenerInterface& listener) const override;
+    std::string dump() const override;
 };
 
 /* Describes a change in the state of Pointer Capture. */
@@ -226,6 +233,7 @@ struct NotifyPointerCaptureChangedArgs : public NotifyArgs {
     virtual ~NotifyPointerCaptureChangedArgs() {}
 
     void notify(InputListenerInterface& listener) const override;
+    std::string dump() const override;
 };
 
 /* Describes a vibrator state event. */
@@ -244,6 +252,7 @@ struct NotifyVibratorStateArgs : public NotifyArgs {
     virtual ~NotifyVibratorStateArgs() {}
 
     void notify(InputListenerInterface& listener) const override;
+    std::string dump() const override;
 };
 
 /*
