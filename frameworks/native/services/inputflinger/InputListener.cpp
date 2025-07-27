@@ -457,15 +457,15 @@ void QueuedInputListener::notifyPointerCaptureChanged(const NotifyPointerCapture
 }
 
 void QueuedInputListener::flush() {
-    LOGD("QueuedInputListener::flush(): queueSize=%zu", mArgsQueue.size());
+    // LOGD("QueuedInputListener::flush(): queueSize=%zu", mArgsQueue.size());
 
     size_t idx = 0;
     for (const auto& args : mArgsQueue) {
         // full dump of each queued event (pointer + contents)
-        LOGD("QueuedInputListener::flush()[%zu] ptr=%p → %s",
-             idx,
-             args.get(),
-             args->dump().c_str());
+        // LOGD("QueuedInputListener::flush()[%zu] ptr=%p → %s",
+             // idx,
+             // args.get(),
+             // args->dump().c_str());
         idx++;
         args->notify(mInnerListener);
      }

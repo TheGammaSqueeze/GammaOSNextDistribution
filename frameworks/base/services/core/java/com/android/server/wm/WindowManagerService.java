@@ -4233,18 +4233,28 @@ public class WindowManagerService extends IWindowManager.Stub
 	 * @param requestedOrientation The orientation requested by the app.
 	 * @return The orientation to use in place of requestedOrientation.
 	 */
-	int mapOrientationRequest(int requestedOrientation) {
-		// If auto-rotation is disabled, ignore any app request and force landscape.
-		if (!isAutoRotationEnabled()) {
-			return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-		}
-		// If the ignore-orientation-request policy is not enabled, honor the app request.
-		if (!mIsIgnoreOrientationRequestDisabled) {
-			return requestedOrientation;
-		}
-		// Otherwise, apply any mapping defined in mOrientationMapping.
-		return mOrientationMapping.get(requestedOrientation, requestedOrientation);
-	}
+    int mapOrientationRequest(int requestedOrientation) {
+        // If auto‑rotation is disabled, honor natural display orientation:
+        if (!isAutoRotationEnabled()) {
+            // Read the natural orientation prop (defaults to "landscape" if unset/invalid)
+            String nat = SystemProperties.get(
+                    "ro.surface_flinger.naturalorientation", "landscape");
+            if ("portrait".equalsIgnoreCase(nat)) {
+                return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            } else {
+                // any other value (including "landscape" or empty/typo) → landscape
+                return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            }
+        }
+
+        // If the ignore‑orientation‑request policy is off, honor the app’s request:
+        if (!mIsIgnoreOrientationRequestDisabled) {
+            return requestedOrientation;
+        }
+
+        // Otherwise, apply any custom mapping:
+        return mOrientationMapping.get(requestedOrientation, requestedOrientation);
+    }
 
     /**
      * Whether the system ignores the value of {@link DisplayArea#getIgnoreOrientationRequest} and
