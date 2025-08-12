@@ -44,9 +44,50 @@
 #include "FastMixer.h"
 #include "TypedLogger.h"
 
+// --- Added for speaker-only PEQ (fast-path safe)
+#include <cutils/properties.h>
+#include <audio_utils/primitives.h>   // memcpy_to_* / *_from_float helpers
+#include <vector>
+
 namespace android {
 
 /*static*/ const FastMixerState FastMixer::sInitial;
+
+// ---- Speaker PEQ (keeps FAST) ------------------------------------------------
+struct SpeakerBiquad {
+    float b0{1.f}, b1{0.f}, b2{0.f}, a1{0.f}, a2{0.f};
+    float z1L{0.f}, z2L{0.f}, z1R{0.f}, z2R{0.f};
+    bool enabled{false};
+    inline void process(float* interleaved, size_t frames, int ch) {
+        if (!enabled || ch < 2) return;
+        for (size_t i = 0; i < frames; ++i) {
+            const float xL = interleaved[2*i+0];
+            const float xR = interleaved[2*i+1];
+            const float yL = b0*xL + z1L;
+            const float yR = b0*xR + z1R;
+            z1L = b1*xL - a1*yL + z2L;
+            z1R = b1*xR - a1*yR + z2R;
+            z2L = b2*xL - a2*yL;
+            z2R = b2*xR - a2*yR;
+            interleaved[2*i+0] = yL;
+            interleaved[2*i+1] = yR;
+        }
+    }
+};
+static inline void loadSpeakerBiquadFromProps(SpeakerBiquad& s) {
+    s.enabled = property_get_bool("persist.sys.spk.peq", false);
+    if (!s.enabled) return;
+    char v[PROPERTY_VALUE_MAX];
+    auto rp = [&](const char* k, float d)->float {
+        return property_get(k, v, nullptr) > 0 ? static_cast<float>(atof(v)) : d;
+    };
+    s.b0 = rp("persist.sys.spk.peq.b0", 1.f);
+    s.b1 = rp("persist.sys.spk.peq.b1", 0.f);
+    s.b2 = rp("persist.sys.spk.peq.b2", 0.f);
+    s.a1 = rp("persist.sys.spk.peq.a1", 0.f);
+    s.a2 = rp("persist.sys.spk.peq.a2", 0.f);
+}
+// -----------------------------------------------------------------------------
 
 static audio_channel_mask_t getChannelMaskFromCount(size_t count) {
     const audio_channel_mask_t mask = audio_channel_out_mask_from_count(count);
@@ -495,6 +536,58 @@ void FastMixer::onWork()
                     audio_bytes_per_sample(mFormat.mFormat),
                     frameCount * audio_bytes_per_frame(mAudioChannelCount, mFormat.mFormat));
         }
+
+        // ---- Speaker-only PEQ (keeps FAST): run just before sink write ----
+        {
+            static SpeakerBiquad sEq;
+            if (!sEq.enabled) loadSpeakerBiquadFromProps(sEq);
+
+            if (sEq.enabled) {
+                const size_t sampCount = frameCount * mSinkChannelCount;
+                switch (mFormat.mFormat) {
+                    case AUDIO_FORMAT_PCM_FLOAT: {
+                        sEq.process(reinterpret_cast<float*>(buffer),
+                                    frameCount, (int)mSinkChannelCount);
+                        break;
+                    }
+                    case AUDIO_FORMAT_PCM_16_BIT: {
+                        static thread_local std::vector<float> sTmp;
+                        sTmp.resize(sampCount);
+                        memcpy_to_float_from_i16(sTmp.data(),
+                                reinterpret_cast<const int16_t*>(buffer), sampCount);
+                        sEq.process(sTmp.data(), frameCount, (int)mSinkChannelCount);
+                        memcpy_to_i16_from_float(reinterpret_cast<int16_t*>(buffer),
+                                sTmp.data(), sampCount);
+                        break;
+                    }
+                    case AUDIO_FORMAT_PCM_24_BIT_PACKED: {
+                        static thread_local std::vector<float> sTmp;
+                        sTmp.resize(sampCount);
+                        memcpy_to_float_from_p24(sTmp.data(),
+                                reinterpret_cast<const uint8_t*>(buffer), sampCount);
+                        sEq.process(sTmp.data(), frameCount, (int)mSinkChannelCount);
+                        memcpy_to_p24_from_float(reinterpret_cast<uint8_t*>(buffer),
+                                sTmp.data(), sampCount);
+                        break;
+                    }
+                    case AUDIO_FORMAT_PCM_32_BIT: {
+                        static thread_local std::vector<float> sTmp;
+                        sTmp.resize(sampCount);
+                        memcpy_to_float_from_i32(sTmp.data(),
+                                reinterpret_cast<const int32_t*>(buffer), sampCount);
+                        sEq.process(sTmp.data(), frameCount, (int)mSinkChannelCount);
+                        memcpy_to_i32_from_float(reinterpret_cast<int32_t*>(buffer),
+                                sTmp.data(), sampCount);
+                        break;
+                    }
+                    default:
+                        // Other (non-proportional) formats: skip EQ
+                        break;
+                }
+            }
+        }
+        // -------------------------------------------------------------------
+
         // if non-NULL, then duplicate write() to this non-blocking sink
 #ifdef TEE_SINK
         mTee.write(buffer, frameCount);

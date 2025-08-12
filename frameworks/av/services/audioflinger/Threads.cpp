@@ -93,6 +93,7 @@
 
 #include <pthread.h>
 #include "TypedLogger.h"
+#include <vector>
 
 // ----------------------------------------------------------------------------
 
@@ -298,6 +299,38 @@ static void sFastTrackMultiplierInit()
             sFastTrackMultiplier = (int) ul;
         }
     }
+}
+
+// ----------------------------------------------------------------------------
+// Simple 2-channel biquad for speaker PEQ (enabled by properties)
+struct SpeakerBiquad {
+    float b0{1.f}, b1{0.f}, b2{0.f}, a1{0.f}, a2{0.f};
+    float z1L{0.f}, z2L{0.f}, z1R{0.f}, z2R{0.f};
+    bool enabled{false};
+    void processFloat(float* interleaved, size_t frames, int channels) {
+        if (!enabled || channels < 2) return;
+        for (size_t i = 0; i < frames; ++i) {
+            float xL = interleaved[2*i+0], xR = interleaved[2*i+1];
+            float yL = b0*xL + z1L;  float yR = b0*xR + z1R;
+            z1L = b1*xL - a1*yL + z2L; z1R = b1*xR - a1*yR + z2R;
+            z2L = b2*xL - a2*yL;      z2R = b2*xR - a2*yR;
+            interleaved[2*i+0] = yL;  interleaved[2*i+1] = yR;
+        }
+    }
+};
+
+static void loadSpeakerBiquadFromProps(SpeakerBiquad& s) {
+    s.enabled = property_get_bool("persist.sys.spk.peq", false);
+    if (!s.enabled) return;
+    char v[PROPERTY_VALUE_MAX];
+    auto rp=[&](const char* k, float d)->float{
+        return property_get(k, v, nullptr) > 0 ? atof(v) : d;
+    };
+    s.b0 = rp("persist.sys.spk.peq.b0", 1.f);
+    s.b1 = rp("persist.sys.spk.peq.b1", 0.f);
+    s.b2 = rp("persist.sys.spk.peq.b2", 0.f);
+    s.a1 = rp("persist.sys.spk.peq.a1", 0.f);
+    s.a2 = rp("persist.sys.spk.peq.a2", 0.f);
 }
 
 // ----------------------------------------------------------------------------
@@ -3360,6 +3393,35 @@ ssize_t AudioFlinger::PlaybackThread::threadLoop_write()
     // otherwise use the HAL / AudioStreamOut directly
     } else {
         // Direct output and offload threads
+        // Apply speaker PEQ only when routing to built-in speaker.
+        if (outDeviceTypes().count(AUDIO_DEVICE_OUT_SPEAKER) > 0) {
+            static thread_local SpeakerBiquad sEq;
+            if (!sEq.enabled) loadSpeakerBiquadFromProps(sEq);
+            if (sEq.enabled && mChannelCount >= 2) {
+                const size_t frames = mBytesRemaining / mFrameSize;
+                if (mFormat == AUDIO_FORMAT_PCM_FLOAT) {
+                    // Process in place
+                    float* f = reinterpret_cast<float*>(
+                        reinterpret_cast<uint8_t*>(mSinkBuffer) + offset);
+                    sEq.processFloat(f, frames, mChannelCount);
+                } else if (audio_has_proportional_frames(mFormat)) {
+                    // Convert -> process -> convert back (format-agnostic)
+                    static thread_local std::vector<float> tmp;
+                    tmp.resize(frames * mChannelCount);
+                    // to float
+                    memcpy_by_audio_format(
+                        tmp.data(), AUDIO_FORMAT_PCM_FLOAT,
+                        reinterpret_cast<uint8_t*>(mSinkBuffer) + offset, mFormat,
+                        frames * mChannelCount);
+                    sEq.processFloat(tmp.data(), frames, mChannelCount);
+                    // back to sink format
+                    memcpy_by_audio_format(
+                        reinterpret_cast<uint8_t*>(mSinkBuffer) + offset, mFormat,
+                        tmp.data(), AUDIO_FORMAT_PCM_FLOAT,
+                        frames * mChannelCount);
+                }
+            }
+        }
 
         if (mUseAsyncWrite) {
             ALOGW_IF(mWriteAckSequence & 1, "threadLoop_write(): out of sequence write request");
