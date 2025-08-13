@@ -292,6 +292,12 @@ static std::string toString(const std::vector<audio_latency_mode_t>& elements) {
     return s;
 }
 
+static inline void updateGammaEqSpeakerRouteProp(const DeviceTypeSet& outDevices) {
+    const bool onSpeaker = outDevices.count(AUDIO_DEVICE_OUT_SPEAKER) > 0;
+    // Best-effort, ignore return value.
+    property_set("sys.gammaeq.route.spk", onSpeaker ? "1" : "0");
+}
+
 static pthread_once_t sFastTrackMultiplierOnce = PTHREAD_ONCE_INIT;
 
 static void sFastTrackMultiplierInit()
@@ -976,6 +982,10 @@ void AudioFlinger::ThreadBase::processConfigEvents_l()
             mLocalLog.log("CFG_EVENT_CREATE_AUDIO_PATCH: old device %s (%s) new device %s (%s)",
                     dumpDeviceTypes(oldDevices).c_str(), toString(oldDevices).c_str(),
                     dumpDeviceTypes(newDevices).c_str(), toString(newDevices).c_str());
+            // GammaEQ: update speaker route flag when outputs change.
+            if (isOutput()) {
+                updateGammaEqSpeakerRouteProp(outDeviceTypes());
+            }
         } break;
         case CFG_EVENT_RELEASE_AUDIO_PATCH: {
             const DeviceTypeSet oldDevices = getDeviceTypes();
@@ -986,6 +996,10 @@ void AudioFlinger::ThreadBase::processConfigEvents_l()
             mLocalLog.log("CFG_EVENT_RELEASE_AUDIO_PATCH: old device %s (%s) new device %s (%s)",
                     dumpDeviceTypes(oldDevices).c_str(), toString(oldDevices).c_str(),
                     dumpDeviceTypes(newDevices).c_str(), toString(newDevices).c_str());
+            // GammaEQ: update speaker route flag when outputs change.
+            if (isOutput()) {
+                updateGammaEqSpeakerRouteProp(outDeviceTypes());
+            }
         } break;
         case CFG_EVENT_UPDATE_OUT_DEVICE: {
             UpdateOutDevicesConfigEventData *data =
@@ -3380,6 +3394,12 @@ void AudioFlinger::PlaybackThread::readOutputParameters_l()
         item.set(AMEDIAMETRICS_PROP_PREFIX_HAL AMEDIAMETRICS_PROP_LATENCYMS, (double)latencyMs);
     }
     item.record();
+
+    // GammaEQ: ensure the route flag reflects current outputs after (re)read.
+    // This is a cheap call and covers initial bring-up paths as well.
+    if (isOutput()) {
+        updateGammaEqSpeakerRouteProp(outDeviceTypes());
+    }
 }
 
 void AudioFlinger::PlaybackThread::updateMetadata_l()

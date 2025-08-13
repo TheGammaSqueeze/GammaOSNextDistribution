@@ -61,6 +61,22 @@ namespace android {
 
 /*static*/ const FastMixerState FastMixer::sInitial;
 
+// -----------------------------------------------------------------------------
+// GammaEQ speaker-only gating (fast-path safe: property reads only)
+// -----------------------------------------------------------------------------
+static inline bool gammaeqSpeakerOnlyEnabled() {
+    // Default: ON (speaker only)
+    return property_get_bool("persist.sys.gammaeq.spk_only", true);
+}
+static inline bool isSpeakerRoutedNow() {
+    // Set by routing thread when speaker is active, e.g. PlaybackThread:
+    // property_set("sys.gammaeq.route.spk", "1") else "0"
+    return property_get_bool("sys.gammaeq.route.spk", false);
+}
+static inline bool gammaeqForceAllOutputs() {
+    return property_get_bool("persist.sys.gammaeq.force", false);
+}
+
 // ---- Helpers to read system properties safely --------------------------------
 static inline bool getBoolProp(const char* key, bool defVal) {
     return property_get_bool(key, defVal);
@@ -739,8 +755,16 @@ void FastMixer::onWork()
                     frameCount * audio_bytes_per_frame(mAudioChannelCount, mFormat.mFormat));
         }
 
-        // ---- Runtime speaker enhancement chain (float or via temp float) ----
+        // ---- GammaEQ processing block (PEQ / Crystalizer / Widener, etc.) ----
         {
+            // Speaker-only / force guard
+            const bool forceAll = gammaeqForceAllOutputs();
+            const bool spkOnly  = gammaeqSpeakerOnlyEnabled();
+            const bool onSpk    = isSpeakerRoutedNow();
+            if (!forceAll && spkOnly && !onSpk) {
+                goto gammaeq_done;
+            }
+
             // static to keep filter memory per-thread
             static SpeakerBiquad     sPeq;
             static CrystalizerLite   sCr;
@@ -801,6 +825,7 @@ void FastMixer::onWork()
                     break;
             }
         }
+gammaeq_done:
         // --------------------------------------------------------------------
 
         // if non-NULL, then duplicate write() to this non-blocking sink
