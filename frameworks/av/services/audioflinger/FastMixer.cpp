@@ -44,20 +44,55 @@
 #include "FastMixer.h"
 #include "TypedLogger.h"
 
-// --- Added for speaker-only PEQ (fast-path safe)
+// --- Added for runtime speaker enhancements (fast-path safe)
+#include <utils/Timers.h>
 #include <cutils/properties.h>
 #include <audio_utils/primitives.h>   // memcpy_to_* / *_from_float helpers
 #include <vector>
+#include <atomic>
+#include <math.h>
+
+// -----------------------------------------------------------------------------
+// NOTE: The blocks below are self-contained and only use system properties.
+//       No AudioSystem or policy calls are made, so this compiles across trees.
+// -----------------------------------------------------------------------------
 
 namespace android {
 
 /*static*/ const FastMixerState FastMixer::sInitial;
 
-// ---- Speaker PEQ (keeps FAST) ------------------------------------------------
+// ---- Helpers to read system properties safely --------------------------------
+static inline bool getBoolProp(const char* key, bool defVal) {
+    return property_get_bool(key, defVal);
+}
+static inline int getIntProp(const char* key, int defVal) {
+    return property_get_int32(key, defVal);
+}
+static inline float getFloatProp(const char* key, float defVal) {
+    char v[PROPERTY_VALUE_MAX];
+    if (property_get(key, v, nullptr) > 0) {
+        return static_cast<float>(atof(v));
+    }
+    return defVal;
+}
+static inline int64_t nowNs() {
+    return systemTime(SYSTEM_TIME_MONOTONIC);
+}
+// clamp helper without std::min/max conflicts in some trees
+template <typename T>
+static inline T clampv(T x, T lo, T hi) {
+    return x < lo ? lo : (x > hi ? hi : x);
+}
+
+// ---- Speaker PEQ (Biquad) ----------------------------------------------------
 struct SpeakerBiquad {
+    // Direct Form I, stereo
     float b0{1.f}, b1{0.f}, b2{0.f}, a1{0.f}, a2{0.f};
     float z1L{0.f}, z2L{0.f}, z1R{0.f}, z2R{0.f};
     bool enabled{false};
+    int  seq{0};
+    int64_t lastCheckNs{0};
+
     inline void process(float* interleaved, size_t frames, int ch) {
         if (!enabled || ch < 2) return;
         for (size_t i = 0; i < frames; ++i) {
@@ -74,19 +109,186 @@ struct SpeakerBiquad {
         }
     }
 };
-static inline void loadSpeakerBiquadFromProps(SpeakerBiquad& s) {
-    s.enabled = property_get_bool("persist.sys.spk.peq", false);
-    if (!s.enabled) return;
-    char v[PROPERTY_VALUE_MAX];
-    auto rp = [&](const char* k, float d)->float {
-        return property_get(k, v, nullptr) > 0 ? static_cast<float>(atof(v)) : d;
-    };
-    s.b0 = rp("persist.sys.spk.peq.b0", 1.f);
-    s.b1 = rp("persist.sys.spk.peq.b1", 0.f);
-    s.b2 = rp("persist.sys.spk.peq.b2", 0.f);
-    s.a1 = rp("persist.sys.spk.peq.a1", 0.f);
-    s.a2 = rp("persist.sys.spk.peq.a2", 0.f);
+
+static inline void loadPEQProps(SpeakerBiquad& s) {
+    s.enabled = getBoolProp("persist.sys.spk.peq", false);
+    s.b0 = getFloatProp("persist.sys.spk.peq.b0", 1.f);
+    s.b1 = getFloatProp("persist.sys.spk.peq.b1", 0.f);
+    s.b2 = getFloatProp("persist.sys.spk.peq.b2", 0.f);
+    s.a1 = getFloatProp("persist.sys.spk.peq.a1", 0.f);
+    s.a2 = getFloatProp("persist.sys.spk.peq.a2", 0.f);
+    s.seq = getIntProp("persist.sys.spk.peq.seq", 0);
 }
+
+// ---- Crystalizer-like treble enhancer (lite) --------------------------------
+// This is a lightweight, fast-path-safe exciter:
+//  * pre-gain (avoid clipping into non-linearity)
+//  * detect high-band transient energy (simple 1st order HPF + rectifier)
+//  * add scaled enhancement to dry (mix)
+//  * post-gain to keep overall level controlled.
+// Tunables via properties:
+//   persist.sys.spk.cryst            [0/1]
+//   persist.sys.spk.cryst.amount     (0..3)    strength of enhancement (default 1.2)
+//   persist.sys.spk.cryst.mix        (0..1)    wet/dry mix              (default 0.8)
+//   persist.sys.spk.cryst.pregain_db (dB)      pre-gain                 (default -6)
+//   persist.sys.spk.cryst.postgain_db(dB)      post-gain                (default -6)
+//   persist.sys.spk.cryst.hz         (2000..12000) HP corner            (default 4500)
+//   persist.sys.spk.cryst.seq        integer    bump to force reload
+struct CrystalizerLite {
+    bool enabled{false};
+    float amount{1.2f};
+    float mix{0.8f};
+    float pre{0.501f};     // -6 dB
+    float post{0.501f};    // -6 dB
+    float aHP{0.5f};       // 1st-order HP coeff (derived from corner)
+    // per-channel state
+    float lpL{0.f}, lpR{0.f};
+    int seq{0};
+    int64_t lastCheckNs{0};
+
+    inline void process(float* x, size_t frames, int ch, int sampleRate) {
+        if (!enabled || ch < 2) return;
+        const float wet = clampv(mix, 0.f, 1.f);
+        const float dry = 1.f - wet;
+        const float k = clampv(amount, 0.f, 4.f);
+        const float preg = pre;
+        const float postg = post;
+
+        // recalc aHP if sampleRate changes requested corner
+        (void)sampleRate; // aHP already set from props
+
+        for (size_t i = 0; i < frames; ++i) {
+            // pre-gain (prevent overs on enhancement)
+            float L = x[2*i+0] * preg;
+            float R = x[2*i+1] * preg;
+
+            // 1st order HP via LP memory: hp = x - lp; lp += alpha*(x - lp)
+            lpL += aHP * (L - lpL);
+            lpR += aHP * (R - lpR);
+            float hpL = L - lpL;
+            float hpR = R - lpR;
+
+            // simple non-linear "crystal" component: emphasize transients / highs
+            float enhL = fabsf(hpL) * hpL * k; // (x*|x|) soft cube emphasis
+            float enhR = fabsf(hpR) * hpR * k;
+
+            // mix back
+            float outL = dry * L + wet * (L + enhL);
+            float outR = dry * R + wet * (R + enhR);
+
+            // post-gain
+            x[2*i+0] = outL * postg;
+            x[2*i+1] = outR * postg;
+        }
+    }
+};
+
+static inline float dbToLin(float db) {
+    return powf(10.f, db * (1.f/20.f));
+}
+static inline float cornerToAlpha(float hz, int sr) {
+    hz = clampv(hz, 200.f, 12000.f);
+    const float x = expf(-2.f * (float)M_PI * hz / (float)sr);
+    // alpha for one-pole LP state update; using lp += a*(x-lp)
+    return 1.f - x;
+}
+
+static inline void loadCrystalProps(CrystalizerLite& c, int sampleRate) {
+    c.enabled = getBoolProp("persist.sys.spk.cryst", false);
+    c.amount  = getFloatProp("persist.sys.spk.cryst.amount", 1.2f);
+    c.mix     = getFloatProp("persist.sys.spk.cryst.mix",    0.8f);
+    c.pre     = dbToLin(getFloatProp("persist.sys.spk.cryst.pregain_db", -6.f));
+    c.post    = dbToLin(getFloatProp("persist.sys.spk.cryst.postgain_db", -6.f));
+    const float hz = getFloatProp("persist.sys.spk.cryst.hz", 4500.f);
+    c.aHP     = cornerToAlpha(hz, sampleRate > 0 ? sampleRate : 48000);
+    c.seq     = getIntProp("persist.sys.spk.cryst.seq", 0);
+}
+
+// ---- Stereo widener (mid/side + high-band emphasis) -------------------------
+//   persist.sys.spk.wide         [0/1]
+//   persist.sys.spk.wide.mix     (0..1)    0=dry, 1=fully widened         (default 0.35)
+//   persist.sys.spk.wide.hpf     (500..12000) HP corner for S channel     (default 2500)
+//   persist.sys.spk.wide.seq     integer
+struct StereoWidenerHB {
+    bool enabled{false};
+    float mix{0.35f};
+    float aHP{0.5f};    // HP for Side channel
+    float sLP{0.f};     // LP state for side HP
+    int seq{0};
+    int64_t lastCheckNs{0};
+
+    inline void process(float* x, size_t frames, int ch, int sampleRate) {
+        if (!enabled || ch < 2) return;
+        const float wet = clampv(mix, 0.f, 1.f);
+        const float dry = 1.f - wet;
+
+        (void)sampleRate;
+
+        for (size_t i = 0; i < frames; ++i) {
+            const float L = x[2*i+0];
+            const float R = x[2*i+1];
+
+            float M = 0.5f * (L + R);
+            float S = 0.5f * (L - R);
+
+            // high-band emphasize side: HP(S)
+            sLP += aHP * (S - sLP);
+            float Sh = S - sLP;
+
+            // widen by adding high-band side
+            float Lw = M + Sh;
+            float Rw = M - Sh;
+
+            x[2*i+0] = dry * L + wet * Lw;
+            x[2*i+1] = dry * R + wet * Rw;
+        }
+    }
+};
+
+static inline void loadWideProps(StereoWidenerHB& w, int sampleRate) {
+    w.enabled = getBoolProp("persist.sys.spk.wide", false);
+    w.mix     = getFloatProp("persist.sys.spk.wide.mix", 0.35f);
+    const float hz = getFloatProp("persist.sys.spk.wide.hpf", 2500.f);
+    w.aHP     = cornerToAlpha(hz, sampleRate > 0 ? sampleRate : 48000);
+    w.seq     = getIntProp("persist.sys.spk.wide.seq", 0);
+}
+
+// Periodic hot-reload helpers
+static inline void maybeReloadPEQ(SpeakerBiquad& s) {
+    const int64_t t = nowNs();
+    if ((t - s.lastCheckNs) > 1000000000LL) { // ~1s
+        s.lastCheckNs = t;
+        const int cur = s.seq;
+        loadPEQProps(s);
+        if (s.seq != cur) {
+            // reset states on seq bump to avoid pops
+            s.z1L = s.z2L = s.z1R = s.z2R = 0.f;
+        }
+    }
+}
+static inline void maybeReloadCrystal(CrystalizerLite& c, int sampleRate) {
+    const int64_t t = nowNs();
+    if ((t - c.lastCheckNs) > 1000000000LL) {
+        c.lastCheckNs = t;
+        const int cur = c.seq;
+        loadCrystalProps(c, sampleRate);
+        if (c.seq != cur) {
+            c.lpL = c.lpR = 0.f;
+        }
+    }
+}
+static inline void maybeReloadWide(StereoWidenerHB& w, int sampleRate) {
+    const int64_t t = nowNs();
+    if ((t - w.lastCheckNs) > 1000000000LL) {
+        w.lastCheckNs = t;
+        const int cur = w.seq;
+        loadWideProps(w, sampleRate);
+        if (w.seq != cur) {
+            w.sLP = 0.f;
+        }
+    }
+}
+
 // -----------------------------------------------------------------------------
 
 static audio_channel_mask_t getChannelMaskFromCount(size_t count) {
@@ -537,56 +739,69 @@ void FastMixer::onWork()
                     frameCount * audio_bytes_per_frame(mAudioChannelCount, mFormat.mFormat));
         }
 
-        // ---- Speaker-only PEQ (keeps FAST): run just before sink write ----
+        // ---- Runtime speaker enhancement chain (float or via temp float) ----
         {
-            static SpeakerBiquad sEq;
-            if (!sEq.enabled) loadSpeakerBiquadFromProps(sEq);
+            // static to keep filter memory per-thread
+            static SpeakerBiquad     sPeq;
+            static CrystalizerLite   sCr;
+            static StereoWidenerHB   sWd;
 
-            if (sEq.enabled) {
-                const size_t sampCount = frameCount * mSinkChannelCount;
-                switch (mFormat.mFormat) {
-                    case AUDIO_FORMAT_PCM_FLOAT: {
-                        sEq.process(reinterpret_cast<float*>(buffer),
-                                    frameCount, (int)mSinkChannelCount);
-                        break;
-                    }
-                    case AUDIO_FORMAT_PCM_16_BIT: {
-                        static thread_local std::vector<float> sTmp;
-                        sTmp.resize(sampCount);
-                        memcpy_to_float_from_i16(sTmp.data(),
-                                reinterpret_cast<const int16_t*>(buffer), sampCount);
-                        sEq.process(sTmp.data(), frameCount, (int)mSinkChannelCount);
-                        memcpy_to_i16_from_float(reinterpret_cast<int16_t*>(buffer),
-                                sTmp.data(), sampCount);
-                        break;
-                    }
-                    case AUDIO_FORMAT_PCM_24_BIT_PACKED: {
-                        static thread_local std::vector<float> sTmp;
-                        sTmp.resize(sampCount);
-                        memcpy_to_float_from_p24(sTmp.data(),
-                                reinterpret_cast<const uint8_t*>(buffer), sampCount);
-                        sEq.process(sTmp.data(), frameCount, (int)mSinkChannelCount);
-                        memcpy_to_p24_from_float(reinterpret_cast<uint8_t*>(buffer),
-                                sTmp.data(), sampCount);
-                        break;
-                    }
-                    case AUDIO_FORMAT_PCM_32_BIT: {
-                        static thread_local std::vector<float> sTmp;
-                        sTmp.resize(sampCount);
-                        memcpy_to_float_from_i32(sTmp.data(),
-                                reinterpret_cast<const int32_t*>(buffer), sampCount);
-                        sEq.process(sTmp.data(), frameCount, (int)mSinkChannelCount);
-                        memcpy_to_i32_from_float(reinterpret_cast<int32_t*>(buffer),
-                                sTmp.data(), sampCount);
-                        break;
-                    }
-                    default:
-                        // Other (non-proportional) formats: skip EQ
-                        break;
+            // (Re)load properties every ~1s or on seq bump.
+            maybeReloadPEQ(sPeq);
+            maybeReloadCrystal(sCr, mSampleRate);
+            maybeReloadWide(sWd, mSampleRate);
+
+            const size_t ch = mSinkChannelCount;
+            const size_t sampCount = frameCount * ch;
+
+            auto processFloat = [&](float* fbuf) {
+                // Order: PEQ -> Crystalizer -> Widener
+                sPeq.process(fbuf, frameCount, (int)ch);
+                sCr.process(fbuf, frameCount, (int)ch, (int)mSampleRate);
+                sWd.process(fbuf, frameCount, (int)ch, (int)mSampleRate);
+            };
+
+            switch (mFormat.mFormat) {
+                case AUDIO_FORMAT_PCM_FLOAT: {
+                    processFloat(reinterpret_cast<float*>(buffer));
+                    break;
                 }
+                case AUDIO_FORMAT_PCM_16_BIT: {
+                    static thread_local std::vector<float> tmp;
+                    tmp.resize(sampCount);
+                    memcpy_to_float_from_i16(tmp.data(),
+                            reinterpret_cast<const int16_t*>(buffer), sampCount);
+                    processFloat(tmp.data());
+                    memcpy_to_i16_from_float(reinterpret_cast<int16_t*>(buffer),
+                            tmp.data(), sampCount);
+                    break;
+                }
+                case AUDIO_FORMAT_PCM_24_BIT_PACKED: {
+                    static thread_local std::vector<float> tmp;
+                    tmp.resize(sampCount);
+                    memcpy_to_float_from_p24(tmp.data(),
+                            reinterpret_cast<const uint8_t*>(buffer), sampCount);
+                    processFloat(tmp.data());
+                    memcpy_to_p24_from_float(reinterpret_cast<uint8_t*>(buffer),
+                            tmp.data(), sampCount);
+                    break;
+                }
+                case AUDIO_FORMAT_PCM_32_BIT: {
+                    static thread_local std::vector<float> tmp;
+                    tmp.resize(sampCount);
+                    memcpy_to_float_from_i32(tmp.data(),
+                            reinterpret_cast<const int32_t*>(buffer), sampCount);
+                    processFloat(tmp.data());
+                    memcpy_to_i32_from_float(reinterpret_cast<int32_t*>(buffer),
+                            tmp.data(), sampCount);
+                    break;
+                }
+                default:
+                    // other formats: leave untouched
+                    break;
             }
         }
-        // -------------------------------------------------------------------
+        // --------------------------------------------------------------------
 
         // if non-NULL, then duplicate write() to this non-blocking sink
 #ifdef TEE_SINK

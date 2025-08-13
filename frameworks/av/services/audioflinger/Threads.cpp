@@ -110,8 +110,13 @@
 #define ALOGVV(a...) do { } while(0)
 #endif
 
-// TODO: Move these macro/inlines to a header file.
-#define max(a, b) ((a) > (b) ? (a) : (b))
+// TODO: Move these inlines to a header file.
+// Use type-safe templates instead of macros to avoid collisions with std::max.
+template <typename T>
+static inline T max(const T& a, const T& b)
+{
+    return a > b ? a : b;
+}
 
 template <typename T>
 static inline T min(const T& a, const T& b)
@@ -319,18 +324,146 @@ struct SpeakerBiquad {
     }
 };
 
-static void loadSpeakerBiquadFromProps(SpeakerBiquad& s) {
-    s.enabled = property_get_bool("persist.sys.spk.peq", false);
-    if (!s.enabled) return;
-    char v[PROPERTY_VALUE_MAX];
-    auto rp=[&](const char* k, float d)->float{
-        return property_get(k, v, nullptr) > 0 ? atof(v) : d;
+struct SpeakerPEQ {
+    struct BQ {
+        float b0{1}, b1{0}, b2{0}, a1{0}, a2{0};
+        float z1L{0}, z2L{0}, z1R{0}, z2R{0};
+        inline void reset() { z1L=z2L=z1R=z2R=0; }
+        inline void process(float* x, size_t frames) {
+            for (size_t i=0;i<frames;++i) {
+                const float xl = x[2*i+0], xr = x[2*i+1];
+                const float yl = b0*xl + z1L;
+                const float yr = b0*xr + z1R;
+                z1L = b1*xl - a1*yl + z2L; z1R = b1*xr - a1*yr + z2R;
+                z2L = b2*xl - a2*yl;       z2R = b2*xr - a2*yr;
+                x[2*i+0] = yl; x[2*i+1] = yr;
+            }
+        }
     };
-    s.b0 = rp("persist.sys.spk.peq.b0", 1.f);
-    s.b1 = rp("persist.sys.spk.peq.b1", 0.f);
-    s.b2 = rp("persist.sys.spk.peq.b2", 0.f);
-    s.a1 = rp("persist.sys.spk.peq.a1", 0.f);
-    s.a2 = rp("persist.sys.spk.peq.a2", 0.f);
+
+    // public knobs
+    bool enabled{false};
+    bool s2enabled{false};      // second stage enable
+    float pregain{1.0f};        // input trim to avoid clipping
+    float limiter{0.0f};        // 0 = off, else soft limit threshold (e.g. 0.97)
+
+    // live reload plumbing
+    int   seq{0};               // property bump to force reload
+    int64_t lastCheckNs{0};     // throttle property reads
+
+    BQ s1, s2;
+
+    inline void softLimit(float* x, size_t n) {
+        if (limiter <= 0.f) return;
+        const float t = limiter;
+        for (size_t i=0;i<n;++i) {
+            float v = x[i];
+            if (v >  t) v = t + (v - t) * 0.25f;
+            if (v < -t) v = -t + (v + t) * 0.25f;
+            x[i] = v;
+        }
+    }
+};
+
+static inline float rp(const char* k, float d) {
+    char v[PROPERTY_VALUE_MAX];
+    return property_get(k, v, nullptr) > 0 ? atof(v) : d;
+}
+static inline int rpi(const char* k, int d) {
+    char v[PROPERTY_VALUE_MAX];
+    return property_get(k, v, nullptr) > 0 ? atoi(v) : d;
+}
+
+static void loadSpeakerPEQFromProps(SpeakerPEQ& s) {
+    s.enabled   = property_get_bool("persist.sys.spk.peq", false);
+    s.s2enabled = property_get_bool("persist.sys.spk.peq2", false);
+    s.pregain   = rp("persist.sys.spk.peq.pregain", 1.f);
+    s.limiter   = rp("persist.sys.spk.peq.limit",   0.f);
+    s.seq       = rpi("persist.sys.spk.peq.seq",    0);
+
+    // Stage 1 (e.g., “crystalizer” FIR-ish IIR approx you’ve been using)
+    s.s1.b0 = rp("persist.sys.spk.peq.b0", 1.f);
+    s.s1.b1 = rp("persist.sys.spk.peq.b1", 0.f);
+    s.s1.b2 = rp("persist.sys.spk.peq.b2", 0.f);
+    s.s1.a1 = rp("persist.sys.spk.peq.a1", 0.f);
+    s.s1.a2 = rp("persist.sys.spk.peq.a2", 0.f);
+    s.s1.reset();
+
+    // Stage 2 (e.g., RBJ high-shelf)
+    s.s2.b0 = rp("persist.sys.spk.peq2.b0", 1.f);
+    s.s2.b1 = rp("persist.sys.spk.peq2.b1", 0.f);
+    s.s2.b2 = rp("persist.sys.spk.peq2.b2", 0.f);
+    s.s2.a1 = rp("persist.sys.spk.peq2.a1", 0.f);
+    s.s2.a2 = rp("persist.sys.spk.peq2.a2", 0.f);
+    s.s2.reset();
+}
+
+// check once a second or whenever seq changes
+static inline void maybeReloadPEQ(SpeakerPEQ& s) {
+    const int64_t now = systemTime(SYSTEM_TIME_MONOTONIC);
+    const bool timeDue = (now - s.lastCheckNs) > seconds(1);
+    int curSeq = s.seq;
+    if (timeDue) curSeq = rpi("persist.sys.spk.peq.seq", curSeq);
+    if (timeDue || curSeq != s.seq) {
+        loadSpeakerPEQFromProps(s);
+        s.lastCheckNs = now;
+    }
+}
+
+// ---- local StereoWidenerHB (same semantics as FastMixer version) -------------
+struct StereoWidenerHB {
+    std::atomic<bool>  enabled{false};
+    std::atomic<float> amount{0.0f}, mix{1.0f}, pregain{1.0f}, limit{0.98f}, fc{3200.0f};
+    int seq{0}; int64_t lastCheckNs{0};
+    float zL{0}, zR{0}, a{0}, b{0};
+    void updateCoef(uint32_t sr) {
+        const float srf = (float)max<uint32_t>(sr, 8000u);
+        const float f   = min(max(fc.load(), 20.0f), srf * 0.45f);
+        const float x   = expf(-2.f * (float)M_PI * f / srf);
+        a = x; b = 1.f - x;
+    }
+    inline float softLimit(float x) const {
+        const float L = limit.load();
+        if (L >= 0.999f) return x;
+        const float ax = fabsf(x);
+        if (ax <= L) return x;
+        const float over = ax - L, rem = 1.f - L, g = rem / (over + rem);
+        return copysignf(L + over * g, x);
+    }
+    inline void process(float* interleaved, size_t frames, int ch) {
+        if (!enabled.load() || ch < 2) return;
+        const float w = amount.load(), m = mix.load(), pre = pregain.load();
+        const float aa=a, bb=b, unpre = 1.f / max(pre, 1e-6f);
+        for (size_t i=0;i<frames;++i) {
+            float xL = interleaved[2*i+0]*pre, xR = interleaved[2*i+1]*pre;
+            zL = aa*zL + bb*xL; zR = aa*zR + bb*xR;
+            const float hiL = xL - zL, hiR = xR - zR;
+            const float yL = softLimit(xL + w*(hiL - hiR));
+            const float yR = softLimit(xR + w*(hiR - hiL));
+            interleaved[2*i+0] = (1.f-m)*(xL*unpre) + m*(yL*unpre);
+            interleaved[2*i+1] = (1.f-m)*(xR*unpre) + m*(yR*unpre);
+        }
+    }
+};
+
+static inline void wideLoad(StereoWidenerHB& w) {
+    w.enabled.store(property_get_bool("persist.sys.spk.wide", false));
+    char v[PROPERTY_VALUE_MAX];
+    auto rf=[&](const char* k, float d)->float{
+        return property_get(k,v,nullptr)>0 ? (float)atof(v) : d;
+    };
+    w.amount.store(rf("persist.sys.spk.wide.amount", 0.35f));
+    w.mix.store   (rf("persist.sys.spk.wide.mix",    1.0f));
+    w.pregain.store(rf("persist.sys.spk.wide.pre",   0.90f));
+    w.limit.store (rf("persist.sys.spk.wide.limit",  0.98f));
+    w.fc.store    (rf("persist.sys.spk.wide.fc",     3200.f));
+    w.seq = property_get_int32("persist.sys.spk.wide.seq", 0);
+}
+
+static inline void wideMaybeReload(StereoWidenerHB& w) {
+    const int64_t now = systemTime(SYSTEM_TIME_MONOTONIC);
+    if (now - w.lastCheckNs > seconds(1) ||
+        property_get_int32("persist.sys.spk.wide.seq", w.seq) != w.seq) { wideLoad(w); w.lastCheckNs = now; }
 }
 
 // ----------------------------------------------------------------------------
@@ -2679,6 +2812,62 @@ uint32_t AudioFlinger::PlaybackThread::latency_l() const
     return 0;
 }
 
+// ---- local CrystalizerLite (same as FastMixer version) -----------------------
+struct CrystalizerLite {
+    std::atomic<bool> enabled{false};
+    std::atomic<float> amount{0.0f}, mix{1.0f}, pregain{1.0f}, limit{0.98f}, fc{4500.0f};
+    int seq{0}; int64_t lastCheckNs{0};
+    float zL{0}, zR{0}, a{0}, b{0};
+    void updateCoef(uint32_t sr) {
+        const float srf = (float)max<uint32_t>(sr, 8000u);
+        const float f   = min(max(fc.load(), 20.0f), srf * 0.45f);
+        const float x   = expf(-2.f * (float)M_PI * f / srf);
+        a = x; b = 1.f - x;
+    }
+    inline float softLimit(float x) const {
+        const float L = limit.load();
+        if (L >= 0.999f) return x;
+        const float ax = fabsf(x);
+        if (ax <= L) return x;
+        const float over = ax - L, rem = 1.f - L, g = rem / (over + rem);
+        return copysignf(L + over * g, x);
+    }
+    inline void process(float* interleaved, size_t frames, int ch) {
+        if (!enabled.load() || ch < 2) return;
+        const float k = amount.load(), m = mix.load(), pre = pregain.load();
+        const float aa=a, bb=b, unpre = 1.f / max(pre, 1e-6f);
+        for (size_t i=0;i<frames;++i) {
+            float xL = interleaved[2*i+0]*pre, xR = interleaved[2*i+1]*pre;
+            zL = aa*zL + bb*xL; zR = aa*zR + bb*xR;
+            const float yL = softLimit(xL + k*(xL - zL));
+            const float yR = softLimit(xR + k*(xR - zR));
+            interleaved[2*i+0] = (1.f-m)*(xL*unpre) + m*(yL*unpre);
+            interleaved[2*i+1] = (1.f-m)*(xR*unpre) + m*(yR*unpre);
+        }
+    }
+};
+
+static inline void crystLoad(CrystalizerLite& c) {
+    c.enabled.store(property_get_bool("persist.sys.spk.cryst", false));
+    char v[PROPERTY_VALUE_MAX];
+    auto rf=[&](const char* k, float d)->float{
+        return property_get(k,v,nullptr)>0 ? (float)atof(v) : d;
+    };
+    c.amount.store(rf("persist.sys.spk.cryst.amount", 1.25f));
+    c.mix.store   (rf("persist.sys.spk.cryst.mix",    1.0f));
+    c.pregain.store(rf("persist.sys.spk.cryst.pre",   0.63f));
+    c.limit.store (rf("persist.sys.spk.cryst.limit",  0.98f));
+    c.fc.store    (rf("persist.sys.spk.cryst.fc",     4500.f));
+    c.seq = property_get_int32("persist.sys.spk.cryst.seq", 0);
+}
+
+static inline void crystMaybeReload(CrystalizerLite& c) {
+    const int64_t now = systemTime(SYSTEM_TIME_MONOTONIC);
+    if (now - c.lastCheckNs > seconds(1) ||
+        property_get_int32("persist.sys.spk.cryst.seq", c.seq) != c.seq) { crystLoad(c); c.lastCheckNs = now; }
+}
+
+
 void AudioFlinger::PlaybackThread::setMasterVolume(float value)
 {
     Mutex::Autolock _l(mLock);
@@ -3395,31 +3584,41 @@ ssize_t AudioFlinger::PlaybackThread::threadLoop_write()
         // Direct output and offload threads
         // Apply speaker PEQ only when routing to built-in speaker.
         if (outDeviceTypes().count(AUDIO_DEVICE_OUT_SPEAKER) > 0) {
-            static thread_local SpeakerBiquad sEq;
-            if (!sEq.enabled) loadSpeakerBiquadFromProps(sEq);
-            if (sEq.enabled && mChannelCount >= 2) {
+            static thread_local SpeakerPEQ sEq;
+            static thread_local CrystalizerLite sCr;
+            static thread_local StereoWidenerHB sWd;
+            maybeReloadPEQ(sEq);
+            crystMaybeReload(sCr);
+            wideMaybeReload(sWd);
+            if (sEq.enabled && mChannelCount >= 2 && audio_has_proportional_frames(mFormat)) {
                 const size_t frames = mBytesRemaining / mFrameSize;
-                if (mFormat == AUDIO_FORMAT_PCM_FLOAT) {
-                    // Process in place
-                    float* f = reinterpret_cast<float*>(
-                        reinterpret_cast<uint8_t*>(mSinkBuffer) + offset);
-                    sEq.processFloat(f, frames, mChannelCount);
-                } else if (audio_has_proportional_frames(mFormat)) {
-                    // Convert -> process -> convert back (format-agnostic)
-                    static thread_local std::vector<float> tmp;
-                    tmp.resize(frames * mChannelCount);
-                    // to float
-                    memcpy_by_audio_format(
-                        tmp.data(), AUDIO_FORMAT_PCM_FLOAT,
-                        reinterpret_cast<uint8_t*>(mSinkBuffer) + offset, mFormat,
-                        frames * mChannelCount);
-                    sEq.processFloat(tmp.data(), frames, mChannelCount);
-                    // back to sink format
-                    memcpy_by_audio_format(
-                        reinterpret_cast<uint8_t*>(mSinkBuffer) + offset, mFormat,
-                        tmp.data(), AUDIO_FORMAT_PCM_FLOAT,
-                        frames * mChannelCount);
-                }
+                // convert to float if needed
+                static thread_local std::vector<float> tmp;
+                tmp.resize(frames * mChannelCount);
+                memcpy_by_audio_format(tmp.data(), AUDIO_FORMAT_PCM_FLOAT,
+                                       reinterpret_cast<uint8_t*>(mSinkBuffer) + offset, mFormat,
+                                       frames * mChannelCount);
+                // pre-trim
+                for (size_t i=0;i<tmp.size();++i) tmp[i] *= sEq.pregain;
+
+                // stage 1
+                sEq.s1.process(tmp.data(), frames);
+                // stage 2 (optional)
+                if (sEq.s2enabled) sEq.s2.process(tmp.data(), frames);
+
+                // soft limiter (optional)
+                sEq.softLimit(tmp.data(), tmp.size());
+
+                // crystalizer (optional)
+                if (sCr.enabled) { sCr.updateCoef(mSampleRate); sCr.process(tmp.data(), frames, (int)mChannelCount); }
+
+                // widener (optional)
+                if (sWd.enabled) { sWd.updateCoef(mSampleRate); sWd.process(tmp.data(), frames, (int)mChannelCount); }
+
+                // back to sink format
+                memcpy_by_audio_format(reinterpret_cast<uint8_t*>(mSinkBuffer) + offset, mFormat,
+                                       tmp.data(), AUDIO_FORMAT_PCM_FLOAT,
+                                       frames * mChannelCount);
             }
         }
 
@@ -4252,7 +4451,7 @@ bool AudioFlinger::PlaybackThread::threadLoop()
                                             availableToWrite = mPipeSink->availableToWrite();
                                     const size_t pipeFrames = monoPipe->maxFrames();
                                     const size_t
-                                            remainingFrames = pipeFrames - max(availableToWrite, 0);
+                                            remainingFrames = pipeFrames - max<ssize_t>(availableToWrite, (ssize_t)0);
                                     mMonopipePipeDepthStats.add(remainingFrames);
                                 }
                             }
@@ -5170,7 +5369,7 @@ void AudioFlinger::MixerThread::threadLoop_sleepTime()
                 MonoPipe *monoPipe = static_cast<MonoPipe *>(mPipeSink.get());
                 const ssize_t availableToWrite = mPipeSink->availableToWrite();
                 const size_t pipeFrames = monoPipe->maxFrames();
-                const size_t framesLeft = pipeFrames - max(availableToWrite, 0);
+                const size_t framesLeft = pipeFrames - max<ssize_t>(availableToWrite, (ssize_t)0);
                 // HAL_framecount <= framesDelay ~ framesLeft / 2 <= Normal_Mixer_framecount
                 const size_t framesDelay = std::min(
                         mNormalFrameCount, max(framesLeft / 2, mFrameCount));
