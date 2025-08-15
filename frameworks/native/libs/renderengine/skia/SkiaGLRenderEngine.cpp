@@ -1259,6 +1259,7 @@ void SkiaGLRenderEngine::drawLayersInternal(
         float scan_angle_deg  = defaultScanAngleDeg;   // <-- auto from display; prop can override
         float curv            = 0.0f;                  // CRT curvature amount (0=off; try 0.08)
         float vignette        = 0.0f;                  // vignette strength (0=off; try 0.15)
+        float edge_soft_px    = 0.0f;                  // 0 = hard edge; >0 = soft fade in pixels
 
         const std::string paramsStr =
                 android::base::GetProperty("persist.gammaos.shader.params", "");
@@ -1274,6 +1275,7 @@ void SkiaGLRenderEngine::drawLayersInternal(
                     else if (p[0] == "scan_angle_deg") scan_angle_deg = (float)atof(p[1].c_str()); // optional override
                     else if (p[0] == "curv")           curv         = (float)atof(p[1].c_str());
                     else if (p[0] == "vignette")       vignette     = std::clamp((float)atof(p[1].c_str()), 0.0f, 1.0f);
+                    else if (p[0] == "edge_soft_px")   edge_soft_px = std::max(0.0f, (float)atof(p[1].c_str()));
                     else if (p[0] == "test_overlay")   testOverlay  = atoi(p[1].c_str()) != 0;
                 }
             }
@@ -1307,6 +1309,7 @@ void SkiaGLRenderEngine::drawLayersInternal(
                     uniform float2 fb_size;   // framebuffer size in pixels (w,h)
                     uniform float  curv;      // curvature amount (0..~0.2)
                     uniform float  vignette;  // vignette strength (0..1)
+                    uniform float  edge_soft_px; // 0 = hard cut; >0 soft fade (pixels)
 
                     // Barrel/pincushion warp of pixel coords (returns warped pixel coords)
                     float2 warp_pixel(float2 p) {
@@ -1326,9 +1329,27 @@ void SkiaGLRenderEngine::drawLayersInternal(
                         return q;
                     }
 
+                    // Edge mask: 1 inside [0,wh), 0 outside. If edge_soft_px>0, fade near edge.
+                    float edge_mask(float2 q, float2 wh) {
+                        // hard inside test (inclusive bounds minus 1px guard)
+                        float inside = step(0.0, q.x) * step(0.0, q.y) *
+                                       step(q.x, wh.x - 1.0) * step(q.y, wh.y - 1.0);
+                        if (edge_soft_px <= 0.0) return inside;
+                        // distance (in pixels) to nearest edge
+                        float2 d = min(q, wh - q);
+                        float distEdge = min(d.x, d.y);
+                        // fade from 0..edge_soft_px
+                        float soft = clamp(distEdge / edge_soft_px, 0.0, 1.0);
+                        return inside * soft;
+                    }
+
                     half4 main(float2 p) {
                         // Warp pixel coordinate for CRT curvature (sampling + pattern follow curve)
                         float2 q = (abs(curv) > 0.0001) ? warp_pixel(p) : p;
+
+                        // Edge mask in warped pixel space
+                        float2 wh = fb_size;
+                        float maskEdge = edge_mask(q, wh);
 
                         // Oriented scanline coordinate
                         float rad = 3.14159265/180.0 * scan_angle_deg;
@@ -1367,6 +1388,10 @@ void SkiaGLRenderEngine::drawLayersInternal(
                             c.rgb *= vig;
                         }
 
+                        // Apply edge mask (blank outside)
+                        c.rgb *= maskEdge;
+                        c.a   *= maskEdge;
+
                         return c;
                     }
                 )";
@@ -1384,6 +1409,7 @@ void SkiaGLRenderEngine::drawLayersInternal(
                     b.uniform("fb_size")        = SkV2{(float)dstSurface->width(), (float)dstSurface->height()};
                     b.uniform("curv")           = curv;
                     b.uniform("vignette")       = vignette;
+                    b.uniform("edge_soft_px")   = edge_soft_px;
                     b.child("src") = srcImage->makeShader(
                             SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone));
 
@@ -1409,6 +1435,7 @@ void SkiaGLRenderEngine::drawLayersInternal(
                 uniform float2 fb_size;
                 uniform float  curv;
                 uniform float  vignette;
+                uniform float  edge_soft_px;
 
                 float2 warp_pixel(float2 p) {
                     float2 wh = fb_size;
@@ -1422,8 +1449,22 @@ void SkiaGLRenderEngine::drawLayersInternal(
                     return (uv2 * 0.5 + 0.5) * wh;
                 }
 
+                float edge_mask(float2 q, float2 wh) {
+                    float inside = step(0.0, q.x) * step(0.0, q.y) *
+                                   step(q.x, wh.x - 1.0) * step(q.y, wh.y - 1.0);
+                    if (edge_soft_px <= 0.0) return inside;
+                    float2 d = min(q, wh - q);
+                    float distEdge = min(d.x, d.y);
+                    float soft = clamp(distEdge / edge_soft_px, 0.0, 1.0);
+                    return inside * soft;
+                }
+
                 half4 main(float2 p) {
                     float2 q = (abs(curv) > 0.0001) ? warp_pixel(p) : p;
+
+                    // Edge mask: outside -> 0, so Multiply will blank it
+                    float2 wh = fb_size;
+                    float maskEdge = edge_mask(q, wh);
 
                     float rad = 3.14159265/180.0 * scan_angle_deg;
                     float2 n = float2(sin(rad), cos(rad));
@@ -1458,6 +1499,9 @@ void SkiaGLRenderEngine::drawLayersInternal(
                         modRGB *= vig;
                     }
 
+                    // Apply edge mask
+                    modRGB *= maskEdge;
+
                     return half4(modRGB, 1.0); // multiply over destination
                 }
             )";
@@ -1475,6 +1519,7 @@ void SkiaGLRenderEngine::drawLayersInternal(
                 b.uniform("fb_size")        = SkV2{(float)dstSurface->width(), (float)dstSurface->height()};
                 b.uniform("curv")           = curv;
                 b.uniform("vignette")       = vignette;
+                b.uniform("edge_soft_px")   = edge_soft_px;
 
                 SkPaint paint;
                 paint.setShader(b.makeShader());
