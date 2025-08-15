@@ -292,10 +292,65 @@ static std::string toString(const std::vector<audio_latency_mode_t>& elements) {
     return s;
 }
 
+// GammaEQ: route flag helper
+// Rules:
+//  - Write "1" immediately if SPEAKER present.
+//  - Before boot complete, never write "0" (early non-audible routes like TELEPHONY_TX open).
+//  - Ignore empty sets and TELEPHONY_TX-only sets.
+// Enable logs with: setprop persist.sys.gammaeq.debugroute 1
 static inline void updateGammaEqSpeakerRouteProp(const DeviceTypeSet& outDevices) {
+    // Debug switch (latched once per process).
+    static const bool kDebug = property_get_bool("persist.sys.gammaeq.debugroute", true);
+
+    // Build a compact hex list of device types for logging.
+    char devBuf[256] = {};
+    if (kDebug) {
+        size_t off = 0;
+        for (const auto& d : outDevices) {
+            off += snprintf(devBuf + off, sizeof(devBuf) - off, "0x%08x,", (unsigned)d);
+            if (off >= sizeof(devBuf)) break;
+        }
+    }
+
+    // Boot complete gate: only trust non-speaker routes after system fully up.
+    char bc[PROPERTY_VALUE_MAX] = {};
+    const bool bootComplete = property_get("sys.boot_completed", bc, "0") > 0 && bc[0] == '1';
+
+    // Skip early noise: empty routing set is not meaningful.
+    if (outDevices.empty()) {
+        if (kDebug) ALOGD("GammaEQ.route skip (empty set)");
+        return;
+    }
+
+    // If the only device is TELEPHONY_TX, ignore (not an audible render path for GammaEQ).
+    bool onlyTelephonyTx = true;
+    for (const auto& d : outDevices) {
+        if (d != AUDIO_DEVICE_OUT_TELEPHONY_TX) { onlyTelephonyTx = false; break; }
+    }
+    if (onlyTelephonyTx) {
+        if (kDebug) ALOGD("GammaEQ.route skip (telephony_tx only): devices=[%s]", devBuf);
+        return;
+    }
+
     const bool onSpeaker = outDevices.count(AUDIO_DEVICE_OUT_SPEAKER) > 0;
-    // Best-effort, ignore return value.
-    property_set("sys.gammaeq.route.spk", onSpeaker ? "1" : "0");
+
+    // Always allow setting to 1 if speaker present.
+    if (onSpeaker) {
+        if (kDebug) ALOGD("GammaEQ.route write=1 (speaker present): devices=[%s]", devBuf);
+        (void)property_set("sys.gammaeq.route.spk", "1");
+        return;
+    }
+
+    // No speaker in set:
+    // If boot not complete yet, don't write 0 (prevents boot-time churn from flipping to 0).
+    if (!bootComplete) {
+        if (kDebug) ALOGD("GammaEQ.route defer write(0) until boot complete: devices=[%s]", devBuf);
+        return;
+    }
+
+    // After boot complete, it's safe to reflect non-speaker routes.
+    if (kDebug) ALOGD("GammaEQ.route write=0: devices=[%s]", devBuf);
+    (void)property_set("sys.gammaeq.route.spk", "0");
 }
 
 static pthread_once_t sFastTrackMultiplierOnce = PTHREAD_ONCE_INIT;
@@ -2274,6 +2329,7 @@ AudioFlinger::PlaybackThread::PlaybackThread(const sp<AudioFlinger>& audioFlinge
     }
 
     readOutputParameters_l();
+    updateGammaEqSpeakerRouteProp(outDeviceTypes());
 
     if (mType != SPATIALIZER
             && mMixerChannelMask != mChannelMask) {
@@ -9437,6 +9493,7 @@ void AudioFlinger::RecordThread::ioConfigChanged(audio_io_config_event_t event, 
         break;
     }
     mAudioFlinger->ioConfigChanged(event, desc, pid);
+    updateGammaEqSpeakerRouteProp(outDeviceTypes());
 }
 
 void AudioFlinger::RecordThread::readInputParameters_l()

@@ -71,7 +71,7 @@ static inline bool gammaeqSpeakerOnlyEnabled() {
 static inline bool isSpeakerRoutedNow() {
     // Set by routing thread when speaker is active, e.g. PlaybackThread:
     // property_set("sys.gammaeq.route.spk", "1") else "0"
-    return property_get_bool("sys.gammaeq.route.spk", false);
+    return property_get_bool("sys.gammaeq.route.spk", true);
 }
 static inline bool gammaeqForceAllOutputs() {
     return property_get_bool("persist.sys.gammaeq.force", false);
