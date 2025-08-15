@@ -145,6 +145,7 @@
 #include "TimeStats/TimeStats.h"
 #include "TunnelModeEnabledReporter.h"
 #include "WindowInfosListenerInvoker.h"
+#include <android-base/properties.h>
 
 #ifdef QCOM_UM_FAMILY
 #if __has_include("QtiGralloc.h")
@@ -2237,6 +2238,19 @@ void SurfaceFlinger::composite(nsecs_t frameTime, int64_t vsyncId)
         refreshArgs.devOptForceClientComposition = true;
         refreshArgs.devOptFlashDirtyRegionsDelay = std::chrono::milliseconds(mDebugFlashDelay);
     }
+
+    // ----- GammaOS: ensure our post-process shader actually runs -----
+    // If the global shader is enabled, force GPU composition so the
+    // SkiaGL RenderEngine path executes (HWC-only frames would skip it).
+    // When disabled, this is a no-op and normal HWC usage resumes.
+    //
+    // NOTE: If protected-only content is on screen, HWC may still override
+    // this as needed. That’s fine; our Skia pass already contains a
+    // protected-friendly "mask-only" path, and HWC will handle the layers.
+    if (android::base::GetBoolProperty("persist.gammaos.shader.enable", false)) {
+        refreshArgs.devOptForceClientComposition = true;
+    }
+    // ---------------------------------------------------------------
 
     const auto expectedPresentTime = mExpectedPresentTime.load();
     const auto prevVsyncTime = mScheduler->getPreviousVsyncFrom(expectedPresentTime);
