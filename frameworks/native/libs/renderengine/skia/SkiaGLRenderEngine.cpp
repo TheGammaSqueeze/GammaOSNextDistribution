@@ -35,6 +35,12 @@
 #include <SkShadowUtils.h>
 #include <SkSurface.h>
 #include <android-base/stringprintf.h>
+#include <android-base/properties.h>
+#include <android-base/strings.h>   // <-- for android::base::Split
+#include <algorithm>                // <-- for std::clamp / std::max
+#include <cstdlib>                  // <-- for atof
+#include <SkRuntimeEffect.h>
+#include <SkRuntimeEffect.h>
 #include <gl/GrGLInterface.h>
 #include <gui/TraceUtils.h>
 #include <sync/sync.h>
@@ -1230,6 +1236,259 @@ void SkiaGLRenderEngine::drawLayersInternal(
     }
     surfaceAutoSaveRestore.restore();
     mCapture->endCapture();
+
+    // ---------------- GammaOS: global flat CRT/scanline post-process ----------------
+    if (android::base::GetBoolProperty("persist.gammaos.shader.enable", false)) {
+        const bool debugLog = android::base::GetBoolProperty("persist.gammaos.shader.debug", false);
+
+        const bool isProtected =
+                (buffer->getBuffer()->getUsage() & GRALLOC_USAGE_PROTECTED) != 0;
+
+        // Auto-orient scanlines to match the active display rotation:
+        // ROT_90 or ROT_270 -> 90°, else 0°.
+        float defaultScanAngleDeg =
+                (display.orientation & ui::Transform::ROT_90) ? 90.0f : 0.0f;
+
+        // Params with sensible, visible defaults; props can override.
+        bool  testOverlay     = false;
+        float scan_px         = 1.0f;
+        float scan_strength   = 0.8f;
+        float triad_px        = 0.0f;
+        float mask_strength   = 0.0f;
+        float scan_phase      = 0.0f;
+        float scan_angle_deg  = defaultScanAngleDeg;   // <-- auto from display; prop can override
+        float curv            = 0.0f;                  // CRT curvature amount (0=off; try 0.08)
+        float vignette        = 0.0f;                  // vignette strength (0=off; try 0.15)
+
+        const std::string paramsStr =
+                android::base::GetProperty("persist.gammaos.shader.params", "");
+        if (!paramsStr.empty()) {
+            for (auto& kv : android::base::Split(paramsStr, ",")) {
+                auto p = android::base::Split(kv, "=");
+                if (p.size() == 2) {
+                    if (p[0] == "scan_px")          scan_px        = std::max(1.0f,  (float)atof(p[1].c_str()));
+                    else if (p[0] == "scan_strength") scan_strength = std::clamp((float)atof(p[1].c_str()), 0.0f, 1.0f);
+                    else if (p[0] == "triad_px")       triad_px     = std::max(0.0f,  (float)atof(p[1].c_str()));
+                    else if (p[0] == "mask_strength")  mask_strength= std::clamp((float)atof(p[1].c_str()), 0.0f, 1.0f);
+                    else if (p[0] == "scan_phase")     scan_phase   = std::clamp((float)atof(p[1].c_str()), 0.0f, scan_px);
+                    else if (p[0] == "scan_angle_deg") scan_angle_deg = (float)atof(p[1].c_str()); // optional override
+                    else if (p[0] == "curv")           curv         = (float)atof(p[1].c_str());
+                    else if (p[0] == "vignette")       vignette     = std::clamp((float)atof(p[1].c_str()), 0.0f, 1.0f);
+                    else if (p[0] == "test_overlay")   testOverlay  = atoi(p[1].c_str()) != 0;
+                }
+            }
+        }
+
+        // 50% gray multiply to prove the pass is executing
+        if (testOverlay) {
+            if (debugLog) ALOGD("GammaOS CRT: test_overlay active (multiply 50%% gray).");
+            SkPaint p;
+            p.setColor(SkColorSetARGB(255, 128, 128, 128));
+            p.setBlendMode(SkBlendMode::kMultiply);
+            dstCanvas->save();
+            dstCanvas->resetMatrix();
+            dstCanvas->drawRect(SkRect::MakeWH(dstSurface->width(), dstSurface->height()), p);
+            dstCanvas->restore();
+        } else if (!isProtected) {
+            // ---------- Unprotected output: snapshot + shader (kSrc overwrite) ----------
+            sk_sp<SkImage> srcImage = dstSurface->makeImageSnapshot();
+            if (!srcImage) {
+                if (debugLog) ALOGW("GammaOS CRT: snapshot failed; skipping effect.");
+            } else {
+                static const char* kSkSL = R"(
+                    // Scanlines + optional RGB triad + CRT curvature + optional vignette
+                    uniform shader src;
+                    uniform float  scan_px;
+                    uniform float  scan_strength;
+                    uniform float  triad_px;
+                    uniform float  mask_strength;
+                    uniform float  scan_phase;
+                    uniform float  scan_angle_deg;
+                    uniform float2 fb_size;   // framebuffer size in pixels (w,h)
+                    uniform float  curv;      // curvature amount (0..~0.2)
+                    uniform float  vignette;  // vignette strength (0..1)
+
+                    // Barrel/pincushion warp of pixel coords (returns warped pixel coords)
+                    float2 warp_pixel(float2 p) {
+                        // Normalize to [-1,1] and correct aspect so circles stay circles
+                        float2 wh = fb_size;
+                        float  aspect = wh.x / wh.y;
+                        float2 uv = p / wh * 2.0 - 1.0;  // [-1,1]
+                        uv.x *= aspect;
+
+                        // Simple radial distortion: uv' = uv * (1 + k*r^2)
+                        float r2 = dot(uv, uv);
+                        float k = curv; // >0 pincushion, <0 barrel (classic CRT usually slight pincushion)
+                        float2 uv2 = uv * (1.0 + k * r2);
+
+                        uv2.x /= aspect;
+                        float2 q = (uv2 * 0.5 + 0.5) * wh;
+                        return q;
+                    }
+
+                    half4 main(float2 p) {
+                        // Warp pixel coordinate for CRT curvature (sampling + pattern follow curve)
+                        float2 q = (abs(curv) > 0.0001) ? warp_pixel(p) : p;
+
+                        // Oriented scanline coordinate
+                        float rad = 3.14159265/180.0 * scan_angle_deg;
+                        float2 n = float2(sin(rad), cos(rad)); // 0deg -> vary along Y
+                        float coord = q.x * n.x + q.y * n.y;
+
+                        float period = max(1.0, scan_px);
+                        float rowIdx = floor(mod(coord + scan_phase, period));
+                        float band = (rowIdx < (period * 0.5)) ? 0.0 : 1.0; // 0=dark, 1=bright
+                        float darkMul = 1.0 - clamp(scan_strength, 0.0, 1.0);
+                        float scanMul = (band > 0.5) ? 1.0 : darkMul;
+
+                        // Optional RGB triad along (warped) X
+                        float3 triRGB = float3(1.0, 1.0, 1.0);
+                        if (triad_px >= 1.0) {
+                            float px = max(1.0, triad_px);
+                            float t = floor(mod(q.x, px));
+                            float seg = floor(3.0 * t / px); // 0,1,2
+                            if (seg < 0.5)       triRGB = float3(1.0, 0.80, 0.80);
+                            else if (seg < 1.5)  triRGB = float3(0.80, 1.0, 0.80);
+                            else                 triRGB = float3(0.80, 0.80, 1.0);
+                            triRGB = mix(float3(1.0,1.0,1.0), triRGB, clamp(mask_strength, 0.0, 1.0));
+                        }
+
+                        half4 c = src.eval(q);  // sample with curvature
+                        c.rgb *= triRGB * scanMul;
+
+                        // Optional vignette based on distance from center in uv-space
+                        if (vignette > 0.0) {
+                            float2 wh = fb_size;
+                            float aspect = wh.x / wh.y;
+                            float2 uv = p / wh * 2.0 - 1.0;
+                            uv.x *= aspect;
+                            float r2 = dot(uv, uv);
+                            float vig = 1.0 - vignette * smoothstep(0.6, 1.0, r2);
+                            c.rgb *= vig;
+                        }
+
+                        return c;
+                    }
+                )";
+                auto [effect, err] = SkRuntimeEffect::MakeForShader(SkString(kSkSL));
+                if (!effect) {
+                    if (debugLog) ALOGE("GammaOS CRT: SkSL compile failed (unprotected): %s", err.c_str());
+                } else {
+                    SkRuntimeShaderBuilder b(effect);
+                    b.uniform("scan_px")        = scan_px;
+                    b.uniform("scan_strength")  = scan_strength;
+                    b.uniform("triad_px")       = triad_px;
+                    b.uniform("mask_strength")  = mask_strength;
+                    b.uniform("scan_phase")     = scan_phase;
+                    b.uniform("scan_angle_deg") = scan_angle_deg;
+                    b.uniform("fb_size")        = SkV2{(float)dstSurface->width(), (float)dstSurface->height()};
+                    b.uniform("curv")           = curv;
+                    b.uniform("vignette")       = vignette;
+                    b.child("src") = srcImage->makeShader(
+                            SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone));
+
+                    SkPaint paint;
+                    paint.setShader(b.makeShader());
+                    paint.setBlendMode(SkBlendMode::kSrc); // overwrite composed image
+                    dstCanvas->save();
+                    dstCanvas->resetMatrix(); // pixel-locked
+                    dstCanvas->drawRect(SkRect::MakeWH(dstSurface->width(), dstSurface->height()), paint);
+                    dstCanvas->restore();
+                    if (debugLog) ALOGD("GammaOS CRT: applied snapshot-based pass.");
+                }
+            }
+        } else {
+            // ---------- Protected output: mask-only multiply path (no sampling) ----------
+            static const char* kMaskSkSL = R"(
+                uniform float  scan_px;
+                uniform float  scan_strength;
+                uniform float  triad_px;
+                uniform float  mask_strength;
+                uniform float  scan_phase;
+                uniform float  scan_angle_deg;
+                uniform float2 fb_size;
+                uniform float  curv;
+                uniform float  vignette;
+
+                float2 warp_pixel(float2 p) {
+                    float2 wh = fb_size;
+                    float  aspect = wh.x / wh.y;
+                    float2 uv = p / wh * 2.0 - 1.0;
+                    uv.x *= aspect;
+                    float r2 = dot(uv, uv);
+                    float k = curv;
+                    float2 uv2 = uv * (1.0 + k * r2);
+                    uv2.x /= aspect;
+                    return (uv2 * 0.5 + 0.5) * wh;
+                }
+
+                half4 main(float2 p) {
+                    float2 q = (abs(curv) > 0.0001) ? warp_pixel(p) : p;
+
+                    float rad = 3.14159265/180.0 * scan_angle_deg;
+                    float2 n = float2(sin(rad), cos(rad));
+                    float coord = q.x * n.x + q.y * n.y;
+
+                    float period = max(1.0, scan_px);
+                    float rowIdx = floor(mod(coord + scan_phase, period));
+                    float band = (rowIdx < (period * 0.5)) ? 0.0 : 1.0;
+                    float darkMul = 1.0 - clamp(scan_strength, 0.0, 1.0);
+                    float scanMul = (band > 0.5) ? 1.0 : darkMul;
+
+                    float3 triRGB = float3(1.0, 1.0, 1.0);
+                    if (triad_px >= 1.0) {
+                        float px = max(1.0, triad_px);
+                        float t = floor(mod(q.x, px));
+                        float seg = floor(3.0 * t / px);
+                        if (seg < 0.5)       triRGB = float3(1.0, 0.80, 0.80);
+                        else if (seg < 1.5)  triRGB = float3(0.80, 1.0, 0.80);
+                        else                 triRGB = float3(0.80, 0.80, 1.0);
+                        triRGB = mix(float3(1.0,1.0,1.0), triRGB, clamp(mask_strength, 0.0, 1.0));
+                    }
+
+                    float3 modRGB = triRGB * scanMul;
+
+                    if (vignette > 0.0) {
+                        float2 wh = fb_size;
+                        float aspect = wh.x / wh.y;
+                        float2 uv = p / wh * 2.0 - 1.0;
+                        uv.x *= aspect;
+                        float r2 = dot(uv, uv);
+                        float vig = 1.0 - vignette * smoothstep(0.6, 1.0, r2);
+                        modRGB *= vig;
+                    }
+
+                    return half4(modRGB, 1.0); // multiply over destination
+                }
+            )";
+            auto [effect, err] = SkRuntimeEffect::MakeForShader(SkString(kMaskSkSL));
+            if (!effect) {
+                if (debugLog) ALOGE("GammaOS CRT: SkSL compile failed (protected): %s", err.c_str());
+            } else {
+                SkRuntimeShaderBuilder b(effect);
+                b.uniform("scan_px")        = scan_px;
+                b.uniform("scan_strength")  = scan_strength;
+                b.uniform("triad_px")       = triad_px;
+                b.uniform("mask_strength")  = mask_strength;
+                b.uniform("scan_phase")     = scan_phase;
+                b.uniform("scan_angle_deg") = scan_angle_deg;
+                b.uniform("fb_size")        = SkV2{(float)dstSurface->width(), (float)dstSurface->height()};
+                b.uniform("curv")           = curv;
+                b.uniform("vignette")       = vignette;
+
+                SkPaint paint;
+                paint.setShader(b.makeShader());
+                paint.setBlendMode(SkBlendMode::kMultiply);
+                dstCanvas->save();
+                dstCanvas->resetMatrix();
+                dstCanvas->drawRect(SkRect::MakeWH(dstSurface->width(), dstSurface->height()), paint);
+                dstCanvas->restore();
+                if (debugLog) ALOGD("GammaOS CRT: applied protected mask-only pass.");
+            }
+        }
+    }
+    // -------------------------------------------------------------------------------
+
     {
         ATRACE_NAME("flush surface");
         LOG_ALWAYS_FATAL_IF(activeSurface != dstSurface);
