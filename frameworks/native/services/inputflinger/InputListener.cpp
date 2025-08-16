@@ -433,44 +433,64 @@ void QueuedInputListener::notifyMotion(const NotifyMotionArgs* args) {
 
 void QueuedInputListener::notifySwitch(const NotifySwitchArgs* args) {
     traceEvent(__func__, args->id);
+    if (args == nullptr) return;
     mArgsQueue.emplace_back(std::make_unique<NotifySwitchArgs>(*args));
 }
 
 void QueuedInputListener::notifySensor(const NotifySensorArgs* args) {
     traceEvent(__func__, args->id);
+    if (args == nullptr) return;
     mArgsQueue.emplace_back(std::make_unique<NotifySensorArgs>(*args));
 }
 
 void QueuedInputListener::notifyVibratorState(const NotifyVibratorStateArgs* args) {
     traceEvent(__func__, args->id);
+    if (args == nullptr) return;
     mArgsQueue.emplace_back(std::make_unique<NotifyVibratorStateArgs>(*args));
 }
 
 void QueuedInputListener::notifyDeviceReset(const NotifyDeviceResetArgs* args) {
     traceEvent(__func__, args->id);
+    if (args == nullptr) return;
     mArgsQueue.emplace_back(std::make_unique<NotifyDeviceResetArgs>(*args));
 }
 
 void QueuedInputListener::notifyPointerCaptureChanged(const NotifyPointerCaptureChangedArgs* args) {
     traceEvent(__func__, args->id);
+    if (args == nullptr) return;
     mArgsQueue.emplace_back(std::make_unique<NotifyPointerCaptureChangedArgs>(*args));
 }
 
 void QueuedInputListener::flush() {
     // LOGD("QueuedInputListener::flush(): queueSize=%zu", mArgsQueue.size());
 
+    if (mArgsQueue.empty()) {
+        return;
+    }
+
+    // Move the current queue aside to avoid reentrancy/cycle issues if notify()
+    // queues more events while we're flushing.
+    auto queue = std::move(mArgsQueue);
+    mArgsQueue.clear();
+
     size_t idx = 0;
-    for (const auto& args : mArgsQueue) {
+    for (auto& args : queue) {
         // full dump of each queued event (pointer + contents)
         // LOGD("QueuedInputListener::flush()[%zu] ptr=%p → %s",
-             // idx,
-             // args.get(),
-             // args->dump().c_str());
+        //      idx,
+        //      args.get(),
+        //      args ? args->dump().c_str() : "<null>");
         idx++;
-        args->notify(mInnerListener);
-     }
 
-    mArgsQueue.clear();
+        // Be defensive against unexpected nulls.
+        if (!args) {
+            continue;
+        }
+
+        // Notify the inner listener; this may enqueue more events into mArgsQueue,
+        // which we will process on the next flush() call.
+        args->notify(mInnerListener);
+    }
 }
 
 } // namespace android
